@@ -1,0 +1,23 @@
+{
+  "name": "nicolashery.com",
+  "version": "0.0.0",
+  "private": true,
+  "dependencies": {},
+  "devDependencies": {
+    "grunt-contrib-compass": "~0.2.0",
+    "grunt": "~0.4.1",
+    "grunt-contrib-watch": "~0.4.4",
+    "grunt-contrib-clean": "~0.4.1",
+    "grunt-contrib-cssmin": "~0.6.1",
+    "grunt-browserify2": "~0.1.8",
+    "grunt-contrib-uglify": "~0.2.2",
+    "browserify": "~2.17.3",
+    "browserify-shim": "~2.0.3",
+    "grunt-jekyll": "~0.3.6",
+    "grunt-contrib-concat": "~0.3.0"
+  },
+  "engines": {
+    "node": "0.10.x",
+    "npm": "1.2.x"
+  }
+}

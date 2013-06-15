@@ -1,0 +1,74 @@
+/*------------------------------------*\
+    HEADER.SCSS
+\*------------------------------------*/
+
+$profile-picture-size: 80px;
+
+.header {
+  margin-bottom: $base-spacing-unit;
+}
+
+// Profile picture
+// -------------------------
+
+.header--profile-picture {
+  width: $profile-picture-size;
+  height: $profile-picture-size;
+  margin: 0 auto;
+  margin-bottom: $half-spacing-unit;
+
+  a {
+    display: block;
+  }
+
+  img {
+    width: $profile-picture-size;
+    height: $profile-picture-size;
+    @include border-radius($profile-picture-size/2);
+  }
+}
+
+// Title & tagline
+// -------------------------
+
+.header--title {
+  color: $brand-primary;
+  text-align: center;
+  margin-bottom: $tiny-spacing-unit;
+
+  > a {
+    &:hover,
+    &:focus {
+      color: $brand-primary;
+      text-decoration: none;
+    }
+  }
+}
+
+.header--tagline {
+  @extend .gamma;
+  color: $gray-light;
+  text-align: center;
+}
+
+// Nav
+// -------------------------
+
+.header--nav {
+  @extend .nav;
+  @extend .nav--banner;
+
+  margin-bottom: 0;
+
+  > li {
+    > a {
+      padding: $half-spacing-unit;
+      font-weight: bold;
+
+      &:hover,
+      &:focus {
+        text-decoration: none;
+      }
+    }
+  }
+}

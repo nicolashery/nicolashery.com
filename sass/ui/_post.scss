@@ -1,0 +1,46 @@
+/*------------------------------------*\
+    POST.SCSS
+\*------------------------------------*/
+
+.post {
+  @extend .page;
+
+  h1 {
+    // Date imediately follows title
+    margin-bottom: 0;
+  }
+}
+
+// Date
+// -------------------------
+
+.post--date {
+  color: $gray-light;
+
+  margin-bottom: $base-spacing-unit;
+}
+
+// Images
+// -------------------------
+
+.post figure {
+
+  // Center image and caption
+  text-align: center;
+  img {
+    display: inline;
+  }
+
+  figcaption {
+    font-size: 16px;
+    font-style: italic;
+  }
+}
+
+// Comments
+// -------------------------
+
+.post--comments {
+  margin-top: 2*$base-spacing-unit;
+  margin-bottom: $base-spacing-unit;
+}

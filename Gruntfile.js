@@ -139,7 +139,7 @@ module.exports = function(grunt) {
   grunt.loadNpmTasks('grunt-jekyll');
 
   // Compile JS & CSS, run watch to recompile on change
-  grunt.registerTask('debug', function(target) {
+  grunt.registerTask('debug', function() {
     // Rebuild './debug'
     grunt.task.run([
       'clean:debug',
@@ -147,9 +147,12 @@ module.exports = function(grunt) {
       'browserify2:debug',
       'concat:debug'
     ]);
-    // Optionally watch for changes
-    if (target === 'watch') grunt.task.run('watch');
+    // Watch for changes
+    grunt.task.run('watch');
   });
+
+  // Alias to `grunt jekyll:server`
+  grunt.registerTask('server', 'jekyll:server');
 
   // Run Jekyll build with environment set to production
   grunt.registerTask('jekyll-production', function() {
@@ -169,9 +172,6 @@ module.exports = function(grunt) {
     'clean:buildTemp',
     'jekyll-production'
   ]);
-
-  // Alias to `grunt jekyll:server`
-  grunt.registerTask('server', 'jekyll:server');
 
   grunt.registerTask('default', ['debug']);
 

@@ -2,7 +2,7 @@ name: 'Nicolas Hery'
 description: 'Web development. Data analytics.'
 url: 'http://nicolashery.com'
 
-markdown: rdiscount
+markdown: redcarpet
 pygments: true
 permalink: /:title/
 exclude: [

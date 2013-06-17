@@ -18,7 +18,7 @@ Some things I look for in the things I work on:
 - [Email](mailto:hi@nicolashery.com)
 - [Twitter](https://twitter.com/nicolas_hery)
 - [GitHub](https://github.com/nicolashery)
-- [RSS](/feed)
+- [RSS](/feed.xml)
 - [LinkedIn](http://www.linkedin.com/in/nicolashery)
 - [Resume]({% asset_url nicolas-hery.pdf %})
 

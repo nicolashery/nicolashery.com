@@ -1,7 +1,6 @@
 ---
 layout: page
 title: About
-home: true
 ---
 
 I'm a freelance web developer based in Paris. I have a background in applied mathematics, started my career as a data analyst in New York, taught myself to code, and now am focused full-time on what I love doing: building great software.

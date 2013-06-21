@@ -105,13 +105,13 @@ module.exports = function(grunt) {
 
     // Clean target directories
     clean: {
-      site: ['_site'],
       debug: ['debug'],
       buildTemp: [
         'build/main.css',
         'build/style.css',
         'build/app.js'
-      ]
+      ],
+      all: ['debug', 'build']
     },
 
     // Run Jekyll commands
@@ -163,7 +163,7 @@ module.exports = function(grunt) {
 
   // Compile and minify JS & CSS, run Jekyll build for production 
   grunt.registerTask('build', [
-    'clean:site',
+    'clean:all',
     'compass:build',
     'browserify2:build',
     'concat:build',

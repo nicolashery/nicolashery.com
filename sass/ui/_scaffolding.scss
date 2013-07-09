@@ -30,3 +30,12 @@ a:focus {
   color: $link-hover-color;
   text-decoration: underline;
 }
+
+// Blockquotes
+// -------------------------
+
+blockquote {
+  color: $gray-light;
+  border-left: 4px solid $gray-lighter;
+  padding: 0 $half-spacing-unit;
+}

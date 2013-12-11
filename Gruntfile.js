@@ -1,6 +1,6 @@
-var shim = require('browserify-shim');
-
 module.exports = function(grunt) {
+  // Load all NPM grunt tasks
+  require('matchdep').filterAll('grunt-*').forEach(grunt.loadNpmTasks);
 
   // Project configuration
   grunt.initConfig({
@@ -16,25 +16,25 @@ module.exports = function(grunt) {
     },
 
     // Combine JS modules using Browserify
-    browserify2: {
+    browserify: {
       options: {
-        entry: './js/main.js',
-        beforeHook: function(bundle) {
-          // Shim 3rd party libraries not in `node_modules`
-          shim(bundle, {
-            'jquery': {path: 'components/jquery/jquery.js', exports: 'jQuery'},
-            'fastclick': {path: 'components/fastclick/lib/fastclick.js', exports: 'jQuery'},
-            'jquery-jail': {path: 'components/JAIL/src/jail.js', exports: 'jail'}
-          });
+        // Shim 3rd party libraries not in `node_modules`
+        shim: {
+          'jquery': {path: 'bower_components/jquery/jquery.js', exports: 'jQuery'},
+          'fastclick': {path: 'bower_components/fastclick/lib/fastclick.js', exports: 'jQuery'},
+          'jquery-jail': {path: 'bower_components/JAIL/src/jail.js', exports: 'jail'}
         }
       },
       debug: {
-        compile: 'debug/app.js',
-        // For source maps
-        debug: true
+        src: ['app/main.js'],
+        dest: 'debug/app.js',
+        options: {
+          debug: true
+        }
       },
       build: {
-        compile: 'build/app.js'
+        src: ['app/main.js'],
+        dest: 'build/app.js'
       }
     },
 
@@ -117,26 +117,20 @@ module.exports = function(grunt) {
     // Run Jekyll commands
     jekyll: {
       server: {
-        server : true,
-        // Add the --watch flag, i.e. rebuild on file changes
-        watch: true
+        options: {
+          serve: true,
+          // Add the --watch flag, i.e. rebuild on file changes
+          watch: true
+        }
       },
       build: {
-        server: false
+        options: {
+          serve: false
+        }
       }
     }
 
   });
-
-  // Load tasks from plugins
-  grunt.loadNpmTasks('grunt-contrib-watch');
-  grunt.loadNpmTasks('grunt-browserify2');
-  grunt.loadNpmTasks('grunt-contrib-compass');
-  grunt.loadNpmTasks('grunt-contrib-concat');
-  grunt.loadNpmTasks('grunt-contrib-uglify');
-  grunt.loadNpmTasks('grunt-contrib-cssmin');
-  grunt.loadNpmTasks('grunt-contrib-clean');
-  grunt.loadNpmTasks('grunt-jekyll');
 
   // Compile JS & CSS, run watch to recompile on change
   grunt.registerTask('debug', function() {
@@ -144,7 +138,7 @@ module.exports = function(grunt) {
     grunt.task.run([
       'clean:debug',
       'compass:debug',
-      'browserify2:debug',
+      'browserify:debug',
       'concat:debug'
     ]);
     // Watch for changes
@@ -165,7 +159,7 @@ module.exports = function(grunt) {
   grunt.registerTask('build', [
     'clean:all',
     'compass:build',
-    'browserify2:build',
+    'browserify:build',
     'concat:build',
     'cssmin',
     'uglify',

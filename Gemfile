@@ -1,8 +1,6 @@
 source 'http://rubygems.org'
 
-gem 'jekyll',  '~>1.0.3'
-gem 'redcarpet',  '~>2.3.0'
+gem 'jekyll',  '~>1.4.1'
 gem 'compass',  '~>0.12.2'
-gem 'compass-inuit',  '~>5.0.1'
-gem 'filey-diff',  '~>1.2.1'
-gem 'jekyll-s3',  '~>3.2.0'
+gem 'compass-inuit',  '~>5.0.2'
+gem 's3_website',  '~>1.6.1'

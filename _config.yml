@@ -7,7 +7,7 @@ pygments: true
 permalink: /:title/
 exclude: [
   'node_modules',
-  'components',
+  'bower_components',
   'Gruntfile.js',
   'package.json',
   'bower.json',
@@ -19,6 +19,7 @@ exclude: [
   'sass',
   'js',
   'coffee',
+  'env',
   'tmp'
 ]
 

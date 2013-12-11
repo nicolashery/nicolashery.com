@@ -16,7 +16,7 @@ Thumbs.db
 # Application specific files
 venv
 node_modules
-components
+bower_components
 .sass-cache
 tmp
 _site
@@ -24,3 +24,5 @@ debug
 build
 assets
 Gemfile.lock
+env/*
+!env/sample.sh

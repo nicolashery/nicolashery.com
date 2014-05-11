@@ -23,7 +23,7 @@ Some things I look for in the things I work on:
 
 ## Recent projects
 
-**Project B** (still working on the name!): This is my current project. It makes interesting use of data to solve a particular healthcare problem. I'm very excited about this one! (**Node.js**, **Backbone**)
+**[Tidepool](http://tidepool.org/)**: I currently do web development for Tidepool, a fully open-source, non-profit organization in California whose mission is to reduce the burden of Type-1 Diabetes by building an open data platform with great apps running on top of it. Very exciting stuff.  (**React.js**, **Node.js**)
 
 **[Outfolio](http://outfol.io/)**: Outfolio is a simple app that I built to help me remember the restaurants and bars I love going to in different cities. (**Backbone**, **Node.js**, **MongoDB**)
 
@@ -33,19 +33,35 @@ Some things I look for in the things I work on:
 
 ## The toolbelt
 
-Some of the stuff I use:
+Things I work with the most nowadays:
 
 - [JavaScript](http://en.wikipedia.org/wiki/JavaScript)
-- [Python](http://python.org/)
-- [Backbone.js](http://backbonejs.org/)
+- [React.js](http://facebook.github.io/react/)
 - [Node.js](http://nodejs.org/)
 - [Sass](http://sass-lang.com/)
-- [Pandas](http://pandas.pydata.org/)
+- [Less](http://lesscss.org/)
 - [MongoDB](http://www.mongodb.org/)
-- [Heroku](http://www.heroku.com/)
-- [Sublime Text](http://www.sublimetext.com/)
-- [Trello](https://trello.com/)
+- [Elasticsearch](http://www.elasticsearch.org/)
 - [Photoshop](http://www.photoshop.com/)
+
+Things I've used before and might come back to now and then:
+
+- [Angular.js](https://angularjs.org/)
+- [Backbone.js](http://backbonejs.org/)
+- [Python](http://python.org/)
+- [Pandas](http://pandas.pydata.org/)
+
+Things I'm learning and would like to work with more:
+
+- [Haskell](http://www.haskell.org/haskellwiki/Haskell)
+- [Clojure](http://clojure.org/) and [ClojureScript](https://github.com/clojure/clojurescript)
+
+Things on my "need to try" list:
+
+- [Om](https://github.com/swannodette/om)
+- [Famo.us](https://famo.us/)
+- [Datomic](http://www.datomic.com/)
+- [CouchDB](http://couchdb.apache.org/)
 
 ## Random stuff I enjoy
 

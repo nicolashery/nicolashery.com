@@ -23,3 +23,20 @@ pre {
     }
   }
 }
+
+// Inline-code
+// Inspired by GitHub styles
+p > code,
+li > code {
+  font-size: 85%;
+  padding-top: 0.2em;
+  padding-bottom: 0.2em;
+  background-color: #fdf6e3;
+  color: #586e75;
+
+  &::before,
+  &::after {
+    letter-spacing: -0.2em;
+    content: "\00a0";
+  }
+}

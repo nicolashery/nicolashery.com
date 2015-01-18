@@ -436,7 +436,7 @@ The last step is adding the CSS (pardon my poor designer skills), tweaking the c
 
 **[screenshot of app with css]**
 
-You can find a running version of the app [here](). **TODO: link**
+You can find a running version of the app [here](http://nicolashery.github.io/example-ui-as-data).
 
 ## Using a different rendering engine
 
@@ -518,4 +518,4 @@ Of course, our example was purposely simple, and additional things would need to
 
 **TODO: conclusion?**
 
-As a reminder, the full code for the example app is [available on GitHub](https://github.com/nicolashery/example-ui-as-data), as well as a [running version]() of the app. **TODO: link**
+As a reminder, the full code for the example app is [available on GitHub](https://github.com/nicolashery/example-ui-as-data), as well as a [running version](http://nicolashery.github.io/example-ui-as-data) of the app.

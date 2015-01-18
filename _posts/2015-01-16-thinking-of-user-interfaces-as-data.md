@@ -198,7 +198,37 @@ It is also very easy to add unit tests, since these are all just **pure function
 - For a projection: given this state and these parameters, does it produce the expected view?
 
 ```javascript
-// TODO: unit test Actions.select and Projections.resourcesRemaining
+// test.js
+describe('Actions.select', function() {
+  it('increments count of selected unit', function() {
+    var state = Immutable.fromJS({
+      units: {archer: {count: 0}}
+    });
+
+    state = Actions.select(state, 'archer');
+
+    expect(state.getIn(['units', 'archer', 'count'])).to.equal(1);
+  });
+});
+
+describe('Projections.resourcesRemaining', function() {
+  it('returns correct remaining gold and supply quantities', function() {
+    var state = Immutable.fromJS({
+      resources: {gold: 10, supply: 4},
+      units: {
+        footman: {cost: 1, count: 1},
+        archer: {cost: 3, count: 2}
+      }
+    });
+
+    var resourcesRemaining = Projections.resourcesRemaining(state);
+
+    expect(resourcesRemaining.getIn([0, 'id'])).to.equal('gold');
+    expect(resourcesRemaining.getIn([0, 'quantity'])).to.equal(3);
+    expect(resourcesRemaining.getIn([1, 'id'])).to.equal('supply');
+    expect(resourcesRemaining.getIn([1, 'quantity'])).to.equal(1);
+  });
+});
 ```
 
 What's more, we don't even need a browser or a DOM for these tests, they can run on the server in Node.
@@ -344,7 +374,21 @@ Projections.unitList = function(state) {
 ```
 
 ```javascript
-// TODO: test for isSelectable bug
+// test.js
+describe('Projections.unitList', function() {
+  it('sets isSelectable flag to false if not enough supply', function() {
+    var state = Immutable.fromJS({
+      resources: {gold: 10, supply: 0},
+      units: {
+        archer: {cost: 3, count: 2}
+      }
+    });
+
+    var unitList = Projections.unitList(state);
+
+    expect(unitList.getIn([0, 'isSelectable'])).to.be.false;
+  });
+});
 ```
 
 ```javascript
@@ -472,6 +516,6 @@ This concludes our example. By not using any framework or library (other than `i
 
 Of course, our example was purposely simple, and additional things would need to be thought of in a real app. For example, where would we put the I/O (ex: talking to a server via HTTP, changing the browser URL, persisting data in the browser's local storage, etc.)? How would we handle the asynchronous nature of web apps (ex: responses coming back from an HTTP request)? Could we sometimes perform some validations in order to prevent the app from getting in a "bad state"? Maybe we would need a "commands" layer between user interactions and the "actions" that change the app state, but that might mean adding a "queue" for the actions to make sure each command sees the most up-to-date state before deciding to take action or not. Also, we recalculate "projections" every time we render, which could be expensive if they require a lot of computation. Maybe we'll need to wrap them in some stateful object, and only recalculate them when the part of the state they need has changed.
 
-TODO: conclusion?
+**TODO: conclusion?**
 
-As a reminder, the full code for the example app is [available on GitHub](), as well as a [running version](https://github.com/nicolashery/example-ui-as-data) of the app.
+As a reminder, the full code for the example app is [available on GitHub](https://github.com/nicolashery/example-ui-as-data), as well as a [running version]() of the app. **TODO: link**

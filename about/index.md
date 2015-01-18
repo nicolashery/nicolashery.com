@@ -23,45 +23,45 @@ Some things I look for in the things I work on:
 
 ## Recent projects
 
-**[Tidepool](http://tidepool.org/)**: I currently do web development for Tidepool, a fully open-source, non-profit organization in California whose mission is to reduce the burden of Type-1 Diabetes by building an open data platform with great apps running on top of it. Very exciting stuff.  (**React.js**, **Node.js**)
+**[Tidepool](http://tidepool.org/)**: I currently do web development for Tidepool, a fully open-source, non-profit organization in California whose mission is to reduce the burden of Type-1 Diabetes by building an open data platform with great apps running on top of it. Very exciting stuff.  (**React.js**, **D3.js**, **Node.js**)
 
 **[Outfolio](http://outfol.io/)**: Outfolio is a simple app that I built to help me remember the restaurants and bars I love going to in different cities. (**Backbone**, **Node.js**, **MongoDB**)
 
 **[Excesiv](https://github.com/nicolashery/excesiv)**: Excesiv is a small application component that I used in a bigger project to generate Excel sheets from templates on the server. (**Python**, **JRuby**, **Apache POI**, **MongoDB**)
 
-**[Resumee](https://github.com/nicolashery/resumee)**: I was bored with the different options to maintain a resume out there, so I created my own. (**Jade**, **CSS**)
+**[Resumee](https://github.com/nicolashery/resumee)**: I couldn't find a simple and satisfying solution to maintain a resume, so I created my own. (**Jade**, **CSS**)
 
 ## The toolbelt
 
-Things I work with the most nowadays:
+Things I work with the most currently:
 
 - [JavaScript](http://en.wikipedia.org/wiki/JavaScript)
 - [React.js](http://facebook.github.io/react/)
 - [Node.js](http://nodejs.org/)
-- [Sass](http://sass-lang.com/)
 - [Less](http://lesscss.org/)
 - [MongoDB](http://www.mongodb.org/)
 - [Elasticsearch](http://www.elasticsearch.org/)
 - [Photoshop](http://www.photoshop.com/)
 
-Things I've used before and might come back to now and then:
+Things I've used before and sometimes come back to:
 
-- [Angular.js](https://angularjs.org/)
 - [Backbone.js](http://backbonejs.org/)
+- [Angular.js](https://angularjs.org/)
+- [Sass](http://sass-lang.com/)
 - [Python](http://python.org/)
 - [Pandas](http://pandas.pydata.org/)
 
 Things I'm learning and would like to work with more:
 
-- [Haskell](http://www.haskell.org/haskellwiki/Haskell)
 - [Clojure](http://clojure.org/) and [ClojureScript](https://github.com/clojure/clojurescript)
+- [Om](https://github.com/swannodette/om), [Quiescent](https://github.com/levand/quiescent), [DataScript](https://github.com/tonsky/datascript)
+- [Haskell](http://www.haskell.org/haskellwiki/Haskell)
 
 Things on my "need to try" list:
 
-- [Om](https://github.com/swannodette/om)
-- [Famo.us](https://famo.us/)
+- [Erlang](http://www.erlang.org/)
 - [Datomic](http://www.datomic.com/)
-- [CouchDB](http://couchdb.apache.org/)
+- [EventStore](http://geteventstore.com/)
 
 ## Random stuff I enjoy
 

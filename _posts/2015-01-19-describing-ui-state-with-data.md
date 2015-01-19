@@ -1,6 +1,6 @@
 ---
 layout: post
-title: Thinking of user-interfaces as data
+title: Describing UI state with data
 ---
 
 *In this post we build a small example UI following a data-first approach. What the user sees is just a representation of a piece of data, the app state. And when she interacts with the interface, she is just applying transformations to that piece of data.*

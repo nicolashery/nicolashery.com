@@ -116,6 +116,7 @@ State.initial = function() {
         // ...
       },
       // ...
+    }
   });
 };
 ```

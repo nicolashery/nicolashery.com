@@ -432,6 +432,224 @@ var routes = {
 };
 ```
 
+One thing to note is that **routing is now async**: the `before()` hook takes a `done()` callback, and the route will only change once it is called (or in our case, we redirect to another route). This means that instead of only having to match a path to a route with `var route = matchPath(path)`, we will have something like `executeRouting(path, function(route) { /*...*/ })`.
+
+```javascript
+// server.js
+server.use(function(req, res) {
+  var state = {};
+  // check session... then:
+  // routing is now async
+  executeRouting(req.url, function(route) {
+    // check if a routing hook flagged the route as a redirect
+    if (route.redirect) {
+      res.redirect(303, route.path);
+      return;
+    }
+    if (isAuthRequiredForRoute(route) && !isAuthenticated(state)) {
+      res.redirect(303, signInPath());
+      return;
+    }
+    state.route = route;
+    // fetch data, render app, expose state & config, send html...
+  });
+});
+```
+
+So now, when JS is disabled, submitting the "new contact" form will sent a `POST` request to `/contact/create`. The `executeRouting()` call will wait until `createContact()` is finished (in the route's `before()` hook), and then redirect to `/contacts`.
+
+We need to update the client-side with the new routing logic as well:
+
+```javascript
+// client.js
+// grab server state, first render... then:
+addLocationChangeListener(function(path) {
+  executeRouting(path, function(route) {
+    if (route.redirect) {
+      replaceLocation(route.path);
+      return;
+    }
+    if (isAuthRequiredForRoute(route) && !isAuthenticated(state)) {
+      replaceLocation(signInPath());
+      return;
+    }
+    state.route = route;
+    render();
+    // fetch data, update state, render...
+  });
+});
+```
+
+If JS is enabled on the client, submitting the "new contact" form will set the state of the `<NewContact>` component to `{working: true}`, thus showing a loading indicator. No page refresh happens, the form is processed entirely client-side, as well as the redirect to `/contacts` when finished, through the same routing hook `before()`.
+
+## Flux
+
+[Flux](http://facebook.github.io/flux/) is a common data-flow architecture for React apps that have a non-trivial amount of data and state to deal with, so let's see how it would look like in an isomorphic app. I purposely left it for last, because I wanted to show that all the previous concerns (sharing state, routing, authentication, progressive enhancement, etc.) have nothing to do with Flux (or React for that matter), and are completely valid in other app architectures.
+
+With Flux, the app **state** is contained in **stores**, and it gets updated by sending **actions** through a **dispatcher**. So just like our simple `state` object previously, on the server-side we need to make sure to have **one "Flux instance"** of stores and dispatcher **for each request** (so different app states don't collide with each other between requests). We'll imagine we can do this with:
+
+```javascript
+var flux = createFlux();
+```
+
+The instance has its own dispatcher, and we can send actions to it with action creators, like so:
+
+```javascript
+createContact(flux, {name: 'Bob'});
+```
+
+
+The instance has its own stores, registered to the dispatcher, that we can access with:
+
+```javascript
+var contact = flux.ContactStore.get('1');
+```
+
+**Checking the user session** and **fetching data** both update the app state, so it makes sense to want to do them through **actions**. However, for this to work inside a request on the server-side, we need to provide action creators with a `done()` callback so we can wait for the session-checking and data-fetching to finish before sending the server response. Be careful though not to pass any arguments to this `done()` callback, in order to keep the "fire and forget" nature of actions when they are used inside components on the client (we don't want components to "wait" for actions to finish and update their internal state, we want them to listen to changes from stores, the "single source or truth").
+
+```javascript
+// actions/loadSession.js
+function loadSession(flux, payload, done) {
+  var authToken = getCookie('authToken');
+  flux.dispatch('LOAD_SESSION_START');
+  api.checkSession(authToken, function(err, isValidToken) {
+    if (err) {
+      flux.dispatch('LOAD_SESSION_FAILURE', err);
+      done();
+      return;
+    }
+    if (isValidToken) {
+      flux.dispatch('LOAD_SESSION_SUCCESS', authToken);
+      state.authToken = null;
+    }
+    else {
+      clearCookie('authToken');
+      flux.dispatch('LOAD_SESSION_SUCCESS', null);
+    }
+    done();
+  });
+}
+```
+
+```javascript
+// actions/fetchContact.js
+function fetchContact(flux, payload, done) {
+  flux.dispatch('FETCH_CONTACT_START');
+  api.getContact(payload.contactId, function(err, contact) {
+    if (err) {
+      flux.dispatch('FETCH_CONTACT_FAILURE', err);
+      done();
+      return;
+    }
+    flux.dispatch('FETCH_CONTACT_SUCCESS', contact);
+    done();
+  });
+}
+```
+
+Similarly, **routing** can also be done through an **action** since it changes app state:
+
+```javascript
+// actions/navigateTo.js
+function navigateTo(flux, payload, done) {
+  var route = matchPath(payload.path);
+  var isAuthenticated = flux.AuthStore.isAuthenticated();
+  if (isAuthRequiredForRoute(route) && !isAuthenticated) {
+    flux.dispatch('REDIRECT', signInPath());
+    done();
+    return;
+  }
+  flux.dispatch('CHANGE_ROUTE', route);
+  done();
+}
+```
+
+Data fetching depends on the route, so we can define it in the routes declaration, and use action creators to execute it:
+
+```javascript
+// route.js
+var routes = {
+  'contact-details': {
+    path: '/contact/:id',
+    fetchData: function(flux, params, query, done) {
+      fetchContact(flux, {contactId: params.id}, done);
+    }
+  },
+  // ...
+};
+```
+
+We create a general `fetchData` function, which will get the current route from the app state and fetch any required data defined for that route:
+
+```javascript
+// fetchData.js
+function fetchData(flux, done) {
+  var route = flux.RouteStore.currentRoute();
+  var dataFetcher = route.fetchData;
+  if (!dataFetcher) {
+    return done();
+  }
+  dataFetcher(flux, route.params, route.query, done);
+}
+```
+
+We still need able to **serialize** the app state (now contained in stores) on the server, and **parse and instanciate** it on the client. Let's imagine our `flux` instance has two methods, `var serializedState = flux.dehydrate()` and `flux.rehydrate(serializedState)` that accomplish this. On the server, it asks each store to serialize its state, and on the client it re-populates the state of each store.
+
+Bringing it all together, this is what our server and client would look like:
+
+```javascript
+// server.js
+server.use(function(req, res) {
+  var flux = createFlux();
+  loadSession(flux, {}, function() {
+    navigateTo(flux, {path: req.url}, function() {
+      var redirectPath = flux.RouteStore.redirectPath()
+      if (redirectPath) {
+        res.redirect(303, redirectPath);
+        return;
+      }
+      fetchData(flux, function() {
+        var exposedState = 'window.__STATE__=' + flux.dehydrate() + ';';
+        var appHtml = React.renderToString(<App flux={flux} />);
+        var html = injectIntoHtml({
+          app: appHtml,
+          state: exposedState
+        });
+        res.send(html);
+      });
+    });
+  });
+});
+```
+
+```javascript
+// client.js
+var state = window.__STATE__;
+var flux = createFlux();
+flux.rehydrate(state);
+
+function render() {
+  React.render(<App flux={flux} />, document.getElementById('app'));
+}
+
+// first render
+render();
+
+addLocationChangeListener(function(path) {
+  navigateTo(flux, {path: path}, function() {
+    var redirectPath = flux.RouteStore.redirectPath()
+    if (redirectPath) {
+      replaceLocation(redirectPath);
+      return;
+    }
+    render();
+    fetchData(flux, render);
+  });
+});
+```
+
+Of course, this is one possible way to combine Flux and isomoprhism, and I'm sure there are other completely valid or even better ways.
+
 ## Practical implementation
 
 Now that we've explored what kind of concepts and problems arise with Isomorphic JavaScript apps, let's look at a more real-world implementation. This [GitHub repository](https://github.com/nicolashery/example-isomorphic-one) contains an example app built using [Yahoo's Fluxible](https://github.com/yahoo/fluxible) and [React Router](https://github.com/rackt/react-router).

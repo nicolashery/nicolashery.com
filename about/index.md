@@ -23,7 +23,7 @@ Some things I look for in the things I work on:
 
 ## Recent projects
 
-**[Tidepool](http://tidepool.org/)**: I currently do web development for Tidepool, a fully open-source, non-profit organization in California whose mission is to reduce the burden of Type-1 Diabetes by building an open data platform with great apps running on top of it. Very exciting stuff.  (**React.js**, **D3.js**, **Node.js**)
+**[Tidepool](http://tidepool.org/)**: I worked as a contractor for Tidepool, an open-source and non-profit organization whose mission is to reduce the burden of Type-1 Diabetes. I helped build the core platform which synchronizes diabetes data from many medical devices, and was one of the main developers for Blip, a web-based data visualization tool. (**React**, **D3.js**, **Node.js**)
 
 **[Outfolio](http://outfol.io/)**: Outfolio is a simple app that I built to help me remember the restaurants and bars I love going to in different cities. (**Backbone**, **Node.js**, **MongoDB**)
 

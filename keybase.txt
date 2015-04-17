@@ -1,0 +1,73 @@
+==================================================================
+https://keybase.io/nicolashery
+--------------------------------------------------------------------
+
+I hereby claim:
+
+  * I am an admin of https://nicolashery.com
+  * I am nicolashery (https://keybase.io/nicolashery) on keybase.
+  * I have a public key with fingerprint 852A E7B2 14A7 7B4A 4A49  27D3 FA69 6E9C F40A DF41
+
+To do so, I am signing this object:
+
+{
+    "body": {
+        "key": {
+            "fingerprint": "852ae7b214a77b4a4a4927d3fa696e9cf40adf41",
+            "host": "keybase.io",
+            "key_id": "fa696e9cf40adf41",
+            "kid": "0101078fba8674fb58dc3de0f9e3f73a6a31580832f0bae8f237722e768c59a18a460a",
+            "uid": "feab1f31cd2bc6d37f7d8669ae29f219",
+            "username": "nicolashery"
+        },
+        "service": {
+            "hostname": "nicolashery.com",
+            "protocol": "https:"
+        },
+        "type": "web_service_binding",
+        "version": 1
+    },
+    "ctime": 1429287050,
+    "expire_in": 157680000,
+    "prev": "6bf60ceaa00538ce56a3ce062ec263cc2adafac7ebaf1a38ce0906922b488abb",
+    "seqno": 3,
+    "tag": "signature"
+}
+
+which yields the signature:
+
+-----BEGIN PGP MESSAGE-----
+Version: Keybase OpenPGP v2.0.8
+Comment: https://keybase.io/crypto
+
+yMM0AnicbZJ/UFRVFMd3IQqXUUFRZsBIngOYw9D7te/HTtMAEwIlpDOAQup633v3
+wRtgd9sfKCDijzQwUsKWwUGHKUEEtsaRbIKYZBWVQiiyNIYUSsAlwMy2JBDpPqu/
+6p4/7txzPud77jlzuhf7anTaWcV0wqsbjtf2upMcmgwCP1yCCWapCDOUYHnwySUr
+phxotVgVkx0zYJyeBJAVSIIGLCvQABlPshIlA4ZnIC/KNA4kmSawGCzXbFMzkIwA
+bDBWMSMfehgVCXn/h897EsAJZCwnC4BjWFoW9JwkUhLEZR5SMksBBlCEnsM5ipRx
+AUBOJimWJUnIMpyo5wHBAZrBAZJz/F0HAoGQKUKUSEFkJIqVWYljGB5AkpdJgldB
+G7SaQAFEtEkRzfnAlgutRVhpDIYChYoI1SmozfwXihXNBUjBYjXbzciJgrl2u8Vm
+UJPtRRaV3gkF4z86RkExSWiaKKMQWm2K2YQZCESKdkUVJmiSJzkW1+MxGNxlUazQ
+qKiEHrWGo6PWgYVIkhFkBhchADiupzgR6tFMRIgzJBRJhhJFEkhABiILBSATQCVw
+Hmd4khRojgOCgKmdvWEyYwYKfRPkIEmbkmMCdocVYqUX3Vuf0mh1mqf9fNR90OgW
+Bf67JV0BS+dDiq+sdI6E9keFXDb0sP4RYcOeVLMuV9QMPQ64l3Mhft4V9966hMVZ
+dHi7sf+Ev95T0MTuvbVm1dqqMfpB2zdXxO2fg1/nBzf+xpcHhU5WPe68u19Y/x1+
+0Dtz0b0nsu3c3LeeTRVD51s92m3FyTcnb79eHard8PLUs3NiLFVRXlZx6E0su2ca
+3z4VgafeOHU8Pf8qmJxgfz+aXL6sM7o0KCRqvPLIZ8mnhb0tr/1Q7JtUfyvlRbpv
+x6imva6tI+Xra1/Mvt37ydCNhvzNCd8vGQpb2/Fh7VtjWxrTI/LiJyyaS2XzTUmG
+j/mg0Koqv5bgkytWni4PqBlLDjcljP8yPb3QdDtxa1ZWXb1j38aZ90coLHDX+Ohc
+6uEBR8DmuFXBzxGJLtfRCWcU3+nvKBtIbg2hKv/M+OodRdPjZ2koCSSYn0Dm0mi/
+P8I60lZ8lO3ypgzwByLlB6u73Ps1RWc6t5U5Dy7qal1OvLu71vv8/ZFnPGkxO6j+
+iWXG4Eejl6qD6t2n2q/Ln7p+nkxram4j1x+qWD3lNKQvuXskek+kT/byszu3zA5e
+CH91JrDx2sn7Z26miBnNxV7plauFWbWZm4aHtfcyK6pjBvs+6D7X7QRrPEncsR/j
+WnoLX6gpPfDlgi91/VjDhof7Gh9NLDzcTUTXJK4jm+/cYS5nHC+t66o869M3/lLr
+eekvM6yzaA==
+=IecA
+-----END PGP MESSAGE-----
+
+And finally, I am proving ownership of this host by posting or
+appending to this document.
+
+View my publicly-auditable identity here: https://keybase.io/nicolashery
+
+==================================================================

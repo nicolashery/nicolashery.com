@@ -666,9 +666,11 @@ With Fluxible, the `flux` "instance" (i.e. state) that we create on each request
 
 We can also use the (undocumented) `React.withContext()` function (careful not to use it to replace `props` though). With it, every component has access to Fluxible's component `context` without having to pass it down as a property.
 
+**Update (2015-04-21):** `React.withContext()` is deprecated, but the React `context` feature is not going away. Fluxible now provides a `FluxibleComponent` that we use to wrap our top-level component, providing child components with Fluxible's context.
+
 I ended up putting `config` values in Fluxible plugins, since they also have `dehydrate`/`rehydrate` methods. For example, I have an `apiPlugin` that holds the `API_HOST` config value, read from an environment variable on the server, and sent to the client via the plugin's dehydrate method.
 
-The routing logic is executed by React Router. Checking authentication and redirecting is done through the `willTransitionTo` static method (at the time of writing I had to use [a fork of React Router](https://github.com/bobpace/react-router/tree/transitionContext) that supports passing the `context` to that method).
+The routing logic is executed by React Router. Checking authentication and redirecting is done through the `willTransitionTo` static method (at the time of writing I had to use [a fork of React Router](https://github.com/rackt/react-router/pull/590) that supports passing the `context` to that method).
 
 The `fetchData` function takes as an argument the `routerState` that was passed to React Router's `router.run()` callback. Using `routerState.routes`,  an array of all handler components that will be rendered for that route, we can grab all the `fetchData` static methods from components that have one, and run them in parallel.
 

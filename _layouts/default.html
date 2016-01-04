@@ -1,35 +1,9 @@
 <!DOCTYPE html>
-<html lang="en">
-  <head>
-    {% if page.home %}
-      <title>Nicolas Hery - Web development, data analytics</title>
-    {% else %}
-      <title>{{ page.title }} - Nicolas Hery</title>
-    {% endif %}
-    <meta charset="utf-8">
-    <meta name="description" content="Nicolas Hery is a freelance web developer based in Paris, France. He has a background in applied mathematics, works as a full-stack developer mostly in JavaScript and Node.js, as well as Python for scientific computing.">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link href="http://fonts.googleapis.com/css?family=Source+Sans+Pro:400,700" rel="stylesheet" type="text/css">
-    {% if site.env == 'production' %}
-      <link rel="stylesheet" href="/build/style.min.css">
-    {% else %}
-      <link rel="stylesheet" href="/debug/style.css">
-    {% endif %}
-    {% include google_analytics.html %}
-  </head>
-
+<html>
+  {% include head.html %}
   <body>
     {% include header.html %}
-    
     {{ content }}
-
     {% include footer.html %}
-
-    {% if site.env == 'production' %}
-      <script src="/build/app.min.js"></script>
-    {% else %}
-      <script src="/debug/app.js"></script>
-    {% endif %}
   </body>
-
 </html>

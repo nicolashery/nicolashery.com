@@ -1,33 +1,26 @@
-name: 'Nicolas Hery'
-description: 'Web development. Data analytics.'
-url: 'http://nicolashery.com'
+title: "Nicolas Hery - Web development, data analytics"
+description: >
+  Nicolas Hery is a freelance web developer based in Paris, France. He has a
+  background in applied mathematics, works as a full-stack developer mostly in
+  JavaScript and Node.js, as well as Python for scientific computing.
+baseurl: ""
+url: "http://nicolashery.com"
 
 markdown: redcarpet
-pygments: true
 permalink: /:title/
-exclude: [
-  'node_modules',
-  'bower_components',
-  'Gruntfile.js',
-  'package.json',
-  'bower.json',
-  'requirements.txt',
-  'Gemfile',
-  'Gemfile.lock',
-  'README.md',
-  'css',
-  'sass',
-  'js',
-  'coffee',
-  'env',
-  'tmp'
-]
+exclude:
+- Gemfile
+- Gemfile.lock
+- README.md
+- env
+- s3_website.yml
+- tmp
 
-assets:
-  root_url: '/assets'
+sass:
+  style: compressed
 
 images:
-  root_url: '/assets/img'
+  root_url: "/img"
 
 disqus:
-  shortname: 'nicolashery'
+  shortname: "nicolashery"

@@ -25,7 +25,7 @@ Building a website "from scratch" using Jekyll might feel a little complicated a
 
 This is also a fairly long read, since I wanted to include the end-to-end process from installing the tools to deploying the site. The table of contents below will help you jump to different sections.
 
-If you want, you can follow along with this [source code](https://github.com/nicolashery/nicolashery.com).
+If you want, you can follow along with this [source code](https://github.com/nicolashery/nicolashery.com/tree/v1.0.0).
 
 ## Table of contents
 
@@ -138,7 +138,7 @@ For deployment, we will also minify the files into `style.min.css` and `main.min
 - [grunt-contrib-cssmin](https://npmjs.org/package/grunt-contrib-cssmin)
 - [grunt-contrib-uglify](https://npmjs.org/package/grunt-contrib-uglify)
 
-All these tasks are defined in the `Gruntfile.js` of your project. You can check out Grunt's [documentation](http://gruntjs.com/getting-started) and my example [Gruntfile.js](https://github.com/nicolashery/nicolashery.com/blob/master/Gruntfile.js) for help setting it up.
+All these tasks are defined in the `Gruntfile.js` of your project. You can check out Grunt's [documentation](http://gruntjs.com/getting-started) and my example [Gruntfile.js](https://github.com/nicolashery/nicolashery.com/blob/v1.0.0/Gruntfile.js) for help setting it up.
 
 <h2 id="workflow">Workflow</h2>
 
@@ -170,7 +170,7 @@ We will see later, but to deploy the website and publish changes, I use the comm
 $ jekyll-s3
 ```
 
-The Grunt tasks described above use a combination of the plugins mentioned earlier. I invite you to check out my [Gruntfile.js](https://github.com/nicolashery/nicolashery.com/blob/master/Gruntfile.js) and use it as inspiration for your own workflow.
+The Grunt tasks described above use a combination of the plugins mentioned earlier. I invite you to check out my [Gruntfile.js](https://github.com/nicolashery/nicolashery.com/blob/v1.0.0/Gruntfile.js) and use it as inspiration for your own workflow.
 
 <h2 id="css">CSS</h2>
 
@@ -304,9 +304,9 @@ As [Dave Rupert](http://daverupert.com/about.html)'s article ["Ughck. Images."](
 In the meantime, I needed something relatively simple that would allow me to include images on a website in a way that keeps it loading fast. I focused on two things:
 
 - **Lazy load** images only once the user scrolls down to them, thanks to the [JAIL](https://github.com/sebarmeli/JAIL.git) jQuery plugin
-- **Responsive images** that load a different version depending on the screen size and resolution, thanks to a [modified version](https://github.com/nicolashery/nicolashery.com/blob/master/js/lib/picturefill.js) of the [picturefill](https://github.com/scottjehl/picturefill) library (small tweak to make it compatible with JAIL)
+- **Responsive images** that load a different version depending on the screen size and resolution, thanks to a [modified version](https://github.com/nicolashery/nicolashery.com/blob/v1.0.0/js/lib/picturefill.js) of the [picturefill](https://github.com/scottjehl/picturefill) library (small tweak to make it compatible with JAIL)
 
-After installing and setting up the JavaScript libraries, I create a [Jekyll plugin](http://jekyllrb.com/docs/plugins/) called [image_tag.rb](https://github.com/nicolashery/nicolashery.com/blob/master/_plugins/image_tag.rb), that allows me to easily insert images in my Markdown files with a custom Liquid tag:
+After installing and setting up the JavaScript libraries, I create a [Jekyll plugin](http://jekyllrb.com/docs/plugins/) called [image_tag.rb](https://github.com/nicolashery/nicolashery.com/blob/v1.0.0/_plugins/image_tag.rb), that allows me to easily insert images in my Markdown files with a custom Liquid tag:
 
     {% raw %}
     {% image my-image.png "Image alt text" "Optional image caption" %}
@@ -448,7 +448,7 @@ _gaq.push(['_setAccount', '{{ site.google_analytics_id }}']);
 {% endraw %}
 ```
 
-You could put your Google Analytics ID in the `_config.yml`, but it's best not to commit these kind of tokens inside the Git repository. Instead, I set it as an environment variable in the terminal that's running the Jekyll build. In order to do this, I created a simple [environment_variables.rb](https://github.com/nicolashery/nicolashery.com/blob/master/_plugins/environment_variables.rb) plugin in which I add the line:
+You could put your Google Analytics ID in the `_config.yml`, but it's best not to commit these kind of tokens inside the Git repository. Instead, I set it as an environment variable in the terminal that's running the Jekyll build. In order to do this, I created a simple [environment_variables.rb](https://github.com/nicolashery/nicolashery.com/blob/v1.0.0/_plugins/environment_variables.rb) plugin in which I add the line:
 
 ```ruby
 site.config['google_analytics_id'] = ENV['GOOGLE_ANALYTICS_ID']

@@ -19,7 +19,7 @@ Some things I look for in the things I work on:
 - [GitHub](https://github.com/nicolashery)
 - [RSS](/feed.xml)
 - [LinkedIn](http://www.linkedin.com/in/nicolashery)
-- [Resume]({% asset_url nicolas-hery.pdf %})
+- [Resume](/nicolas-hery.pdf)
 
 ## Recent projects
 

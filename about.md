@@ -3,7 +3,7 @@ layout: page
 title: About
 ---
 
-I'm a freelance web developer based in Montreal. I was born in France, studied applied mathematics, started my career as a data analyst in New York, taught myself to code, and now am focused full-time on what I love doing: building great software.
+I'm a web developer based in Montreal. I was born in France, studied applied mathematics, started my career as a data analyst in New York, taught myself to code, and now am focused full-time on what I love doing: building great software.
 
 Some things I look for in the things I work on:
 
@@ -35,33 +35,28 @@ Some things I look for in the things I work on:
 
 Things I work with the most currently:
 
-- [JavaScript](http://en.wikipedia.org/wiki/JavaScript)
+- [JavaScript](http://en.wikipedia.org/wiki/JavaScript), [Node.js](http://nodejs.org/)
 - [React.js](http://facebook.github.io/react/)
-- [Node.js](http://nodejs.org/)
-- [Less](http://lesscss.org/)
-- [MongoDB](http://www.mongodb.org/)
-- [Elasticsearch](http://www.elasticsearch.org/)
-- [Photoshop](http://www.photoshop.com/)
+- [Sass](http://sass-lang.com/), [Less](http://lesscss.org/)
+- [PostgreSQL](http://www.postgresql.org/), [Redis](http://redis.io/), [MongoDB](http://www.mongodb.org/)
 
 Things I've used before and sometimes come back to:
 
-- [Backbone.js](http://backbonejs.org/)
-- [Angular.js](https://angularjs.org/)
-- [Sass](http://sass-lang.com/)
-- [Python](http://python.org/)
-- [Pandas](http://pandas.pydata.org/)
+- [Backbone.js](http://backbonejs.org/), [Angular.js](https://angularjs.org/)
+- [Python](http://python.org/), [Pandas](http://pandas.pydata.org/)
+- [Elasticsearch](http://www.elasticsearch.org/)
+- [Photoshop](http://www.photoshop.com/)
 
 Things I'm learning and would like to work with more:
 
-- [Clojure](http://clojure.org/) and [ClojureScript](https://github.com/clojure/clojurescript)
-- [Om](https://github.com/swannodette/om), [Quiescent](https://github.com/levand/quiescent), [DataScript](https://github.com/tonsky/datascript)
-- [Haskell](http://www.haskell.org/haskellwiki/Haskell)
+- [Haskell](http://www.haskell.org/haskellwiki/Haskell), [Elm](http://elm-lang.org/), [PureScript](http://www.purescript.org/)
+- [Clojure](http://clojure.org/), [ClojureScript](https://github.com/clojure/clojurescript)
 
 Things on my "need to try" list:
 
-- [Erlang](http://www.erlang.org/)
+- [Erlang](http://www.erlang.org/), [Elixir](http://elixir-lang.org/)
+- [EventStore](http://geteventstore.com/), [Kafka](http://kafka.apache.org/)
 - [Datomic](http://www.datomic.com/)
-- [EventStore](http://geteventstore.com/)
 
 ## Random stuff I enjoy
 

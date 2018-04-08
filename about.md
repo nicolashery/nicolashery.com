@@ -3,67 +3,34 @@ layout: page
 title: About
 ---
 
-I'm a web developer based in Montreal. I was born in France, studied applied mathematics, started my career as a data analyst in New York, taught myself to code, and now am focused full-time on what I love doing: building great software.
+I'm a software developer based in Montreal. I was born in France, studied applied mathematics, started my career as a data analyst in New York, taught myself to code, and now am focused full-time on what I love doing: building quality software that solves real business problems.
 
-Some things I look for in the things I work on:
+My passion is programming, but I also use my non-coding skills extensively: communicating with stakeholders, writing documentation, managing projects and teams, interviewing and onboarding new team members, teaching and mentoring.
 
-- make a difference in people's lives
-- use the latest technologies
-- have great design and experience
-- leverage data in innovative ways
+As an avid learner, I enjoy reading a lot about different programming languages, platforms, and paradigms. Some of my latest areas of interest have been static type systems, compilers, formal methods, and functional programming. I see them as a means to help create more maintainable, more reliable, and overall better quality software.
 
 ## Keep in touch
 
 - [Email](mailto:hi@nicolashery.com)
 - [Twitter](https://twitter.com/nicolas_hery)
 - [GitHub](https://github.com/nicolashery)
-- [RSS](/feed.xml)
 - [LinkedIn](http://www.linkedin.com/in/nicolashery)
 - [Resume](/nicolas-hery.pdf)
-
-## Recent projects
-
-**[Tidepool](http://tidepool.org/)**: I worked as a contractor for Tidepool, an open-source and non-profit organization whose mission is to reduce the burden of Type-1 Diabetes. I helped build the core platform which synchronizes diabetes data from many medical devices, and was one of the main developers for Blip, a web-based data visualization tool. (**React**, **D3.js**, **Node.js**)
-
-**[Outfolio](http://outfol.io/)**: Outfolio is a simple app that I built to help me remember the restaurants and bars I love going to in different cities. (**Backbone**, **Node.js**, **MongoDB**)
-
-**[Excesiv](https://github.com/nicolashery/excesiv)**: Excesiv is a small application component that I used in a bigger project to generate Excel sheets from templates on the server. (**Python**, **JRuby**, **Apache POI**, **MongoDB**)
-
-**[Resumee](https://github.com/nicolashery/resumee)**: I couldn't find a simple and satisfying solution to maintain a resume, so I created my own. (**Jade**, **CSS**)
+- [RSS](/feed.xml)
 
 ## The toolbelt
 
 Things I work with the most currently:
 
-- [JavaScript](http://en.wikipedia.org/wiki/JavaScript), [Node.js](http://nodejs.org/)
-- [React.js](http://facebook.github.io/react/)
-- [Sass](http://sass-lang.com/), [Less](http://lesscss.org/)
-- [PostgreSQL](http://www.postgresql.org/), [Redis](http://redis.io/), [MongoDB](http://www.mongodb.org/)
-
-Things I've used before and sometimes come back to:
-
-- [Backbone.js](http://backbonejs.org/), [Angular.js](https://angularjs.org/)
-- [Python](http://python.org/), [Pandas](http://pandas.pydata.org/)
-- [Elasticsearch](http://www.elasticsearch.org/)
-- [Photoshop](http://www.photoshop.com/)
+- [TypeScript](https://www.typescriptlang.org/), [Node.js](http://nodejs.org/), [React](http://facebook.github.io/react/)
+- [PostgreSQL](http://www.postgresql.org/), [Redis](http://redis.io/)
 
 Things I'm learning and would like to work with more:
 
-- [Haskell](http://www.haskell.org/haskellwiki/Haskell), [Elm](http://elm-lang.org/), [PureScript](http://www.purescript.org/)
-- [Clojure](http://clojure.org/), [ClojureScript](https://github.com/clojure/clojurescript)
+- [Haskell](https://www.haskell.org/), [PureScript](http://www.purescript.org/)
+- [TLA+](https://learntla.com/introduction/)
 
-Things on my "need to try" list:
+Things I've used before:
 
-- [Erlang](http://www.erlang.org/), [Elixir](http://elixir-lang.org/)
-- [EventStore](http://geteventstore.com/), [Kafka](http://kafka.apache.org/)
-- [Datomic](http://www.datomic.com/)
-
-## Random stuff I enjoy
-
-**A good chat**: There's nothing like an interesting chat over a fresh beer (maybe a couple), talking shop, programming, business, travel, cats, anything really. If you're in town and want to meet up, be sure to holler!
-
-**Hats**: Don't ask me why but I like hats. I have a running collection and I regularly lose them. People seem to think it's fun to take them from my head, try it on, and forget to give it back at the end of the night.
-
-**Guitar**: Ok, if coding doesn't work out, I'll never be the lead guitarist of a rock band! But I like to play a few chords now and then. I also love live music, and if there's some great guitar playing that's even better!
-
-**Travel**: I was lucky enough when I was a kid to live in a lot of different places: France, US, Singapore. I kind of got the taste for travel afterwards, and I love visiting new countries and meeting the people there.
+- [Python](http://python.org/), [Pandas](http://pandas.pydata.org/)
+- [Elasticsearch](http://www.elasticsearch.org/)

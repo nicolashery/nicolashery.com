@@ -22,15 +22,16 @@ As an avid learner, I enjoy reading a lot about different programming languages,
 
 Things I work with the most currently:
 
+- [Haskell](https://www.haskell.org/), [Yesod](https://www.yesodweb.com/), [Servant](https://docs.servant.dev/)
 - [TypeScript](https://www.typescriptlang.org/), [Node.js](http://nodejs.org/), [React](http://facebook.github.io/react/)
 - [PostgreSQL](http://www.postgresql.org/), [Redis](http://redis.io/)
 
-Things I'm learning and would like to work with more:
+Things I'm learning and exploring:
 
-- [Haskell](https://www.haskell.org/), [PureScript](http://www.purescript.org/)
+- [PureScript](http://www.purescript.org/)
 - [TLA+](https://learntla.com/introduction/)
 
 Things I've used before:
 
-- [Python](http://python.org/), [Pandas](http://pandas.pydata.org/)
-- [Elasticsearch](http://www.elasticsearch.org/)
+- [Python](http://python.org/), [Flask](https://flask.palletsprojects.com/), [Pandas](http://pandas.pydata.org/)
+- [Elasticsearch](http://www.elasticsearch.org/), [RabbitMQ](https://www.rabbitmq.com/)

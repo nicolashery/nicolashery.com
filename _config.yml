@@ -13,6 +13,14 @@ exclude:
 - s3_website.yml
 - tmp
 
+plugins:
+  - jekyll-feed
+  - jekyll-sitemap
+  - jekyll-seo-tag
+
+author:
+  twitter: nicolas_hery
+
 sass:
   style: compressed
   sourcemap: development

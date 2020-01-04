@@ -45,8 +45,14 @@ GEM
       rouge (~> 3.0)
       safe_yaml (~> 1.0)
       terminal-table (~> 1.8)
+    jekyll-feed (0.13.0)
+      jekyll (>= 3.7, < 5.0)
     jekyll-sass-converter (2.0.1)
       sassc (> 2.0.1, < 3.0)
+    jekyll-seo-tag (2.6.1)
+      jekyll (>= 3.3, < 5.0)
+    jekyll-sitemap (1.4.0)
+      jekyll (>= 3.7, < 5.0)
     jekyll-watch (2.2.1)
       listen (~> 3.0)
     jmespath (1.4.0)
@@ -83,6 +89,9 @@ PLATFORMS
 
 DEPENDENCIES
   jekyll
+  jekyll-feed
+  jekyll-seo-tag
+  jekyll-sitemap
   s3_website
 
 BUNDLED WITH

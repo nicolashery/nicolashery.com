@@ -6,11 +6,8 @@ description: >
 baseurl: ""
 url: "http://nicolashery.com"
 
-markdown: redcarpet
 permalink: /:title/
 exclude:
-- Gemfile
-- Gemfile.lock
 - README.md
 - env
 - s3_website.yml
@@ -18,6 +15,7 @@ exclude:
 
 sass:
   style: compressed
+  sourcemap: development
 
 images:
   root_url: "/img"

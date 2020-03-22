@@ -1,0 +1,69 @@
+version: 2
+
+jobs:
+  build:
+    docker:
+      - image: circleci/ruby:2.6.5-buster
+        environment:
+          BUNDLE_JOBS: 3
+          BUNDLE_RETRY: 3
+          BUNDLE_PATH: vendor/bundle
+          JEKYLL_ENV: production
+    steps:
+      - checkout
+
+      - run:
+          name: Which bundler?
+          command: bundle -v
+
+      - restore_cache:
+          keys:
+            - bundle-v1-{{ checksum "Gemfile.lock" }}
+            - bundle-v1-
+
+      - run:
+          name: Bundle install
+          command: bundle check --path vendor/bundle || bundle install --deployment
+
+      - save_cache:
+          key: bundle-v1-{{ checksum "Gemfile.lock" }}
+          paths:
+            - vendor/bundle
+
+      - run:
+          name: Jekyll build
+          command: bundle exec jekyll build
+
+      - persist_to_workspace:
+          root: ./
+          paths:
+            - _site
+
+  deploy:
+    docker:
+      - image: circleci/python:3.8.2-buster
+    environment:
+      S3_BUCKET_NAME: nicolashery.com.s3-website-us-east-1.amazonaws.com
+    steps:
+      - attach_workspace:
+          at: ./
+
+      - run:
+          name: Install AWS CLI
+          command: pip install awscli --upgrade --user
+
+      - run:
+          name: Upload to S3
+          command: ~/.local/bin/aws s3 sync ./_site s3://$S3_BUCKET_NAME/ --delete --acl public-read
+
+workflows:
+  version: 2
+  build_deploy:
+    jobs:
+      - build
+      - deploy:
+          requires:
+            - build
+          filters:
+            branches:
+              only: master

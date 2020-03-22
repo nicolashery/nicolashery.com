@@ -44,7 +44,7 @@ jobs:
     docker:
       - image: circleci/python:3.8.2-buster
     environment:
-      S3_BUCKET_NAME: nicolashery.com.s3-website-us-east-1.amazonaws.com
+      S3_BUCKET_NAME: nicolashery.com
     steps:
       - attach_workspace:
           at: ./

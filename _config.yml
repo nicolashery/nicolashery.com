@@ -4,7 +4,7 @@ description: >
   of programming languages and platforms to design and implement technical solutions
   to real business problems.
 baseurl: ""
-url: "http://nicolashery.com"
+url: "https://nicolashery.com"
 
 permalink: /:title/
 exclude:

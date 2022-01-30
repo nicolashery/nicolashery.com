@@ -3,17 +3,20 @@
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
-  {% if page.title %}
-    <title>{{ page.title }} - Nicolas Hery</title>
+  {% if title %}
+    <title>{{ title }} - Nicolas Hery</title>
   {% else %}
     <title>{{ site.title }}</title>
   {% endif %}
 
   <link rel="stylesheet" href="http://fonts.googleapis.com/css?family=Source+Sans+Pro:400,700">
-  <link rel="stylesheet" href="{{ "/css/main.css" | prepend: site.baseurl }}">
+  <link rel="stylesheet" href="{{ "/css/main.css" | url }}">
+  <link rel="stylesheet" href="{{ '/css/prism-one-dark.css' | url }}">
+  <style>pre[class*="language-"] { margin-bottom: 1.5rem; }</style>
 
-  {% seo title=false %}
-  {% feed_meta %}
+  {% include "seo.html" %}
 
-  {% include google_analytics.html %}
+  {% if env.NETLIFY %}
+    {% include "plausible.html" %}
+  {% endif %}
 </head>

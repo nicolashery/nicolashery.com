@@ -1,30 +1,47 @@
 # nicolashery.com
 
-My personal website, built with [Jekyll](http://jekyllrb.com/).
+My personal website, built as a static site with [Eleventy](https://www.11ty.dev/).
 
 ## Install
 
 Requirements:
 
-- [Ruby](http://www.ruby-lang.org/)
-- [Bundler](http://bundler.io/)
+- [Node.js](https://nodejs.org/)
+- [npm](https://www.npmjs.com/)
 
-Clone this repo then install dependencies:
+Both can be installed using [nvm](https://github.com/nvm-sh/nvm). After cloning this repository:
 
-```bash
-$ bundle install
+```
+nvm use
+```
+
+Install dependencies:
+
+```
+npm install
 ```
 
 ## Development
 
-Run the Jekyll development server with:
+Run the development server with:
 
-```bash
-$ bundle exec jekyll serve
+```
+npm start
 ```
 
-Go to `http://localhost:4000/` to see the site.
+Open a browser to `http://localhost:8080/` to see the site.
 
-## Deployment
+To only build the site, run:
 
-[CircleCI](https://circleci.com/) automatically builds the site and pushes the `master` branch to [Amazon S3](https://aws.amazon.com/s3/).
+```
+npm run build
+```
+
+## License
+
+The content in this website, i.e. all images, text, and other assets, included
+in blog posts and pages, are licensed under a [Creative Commons
+Attribution-NonCommercial-NoDerivatives 4.0 International License](http://creativecommons.org/licenses/by-nc-nd/4.0/).
+
+The source code and configuration, CSS, JavaScript, and other build-related
+code, is licensed under the [Unlicense](http://unlicense.org/).

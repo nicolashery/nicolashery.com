@@ -1,5 +1,3 @@
+node_modules/
 _site
-.jekyll-cache
-env/*
-!env/sample.sh
 tmp

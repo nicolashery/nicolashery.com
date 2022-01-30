@@ -1,0 +1,7 @@
+{
+  "tags": [
+    "posts"
+  ],
+  "permalink": "{{ page.fileSlug }}/",
+  "seoPageType": "article"
+}

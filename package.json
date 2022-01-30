@@ -1,0 +1,29 @@
+{
+  "name": "nicolashery.com",
+  "version": "1.0.0",
+  "description": "My personal website",
+  "main": "index.js",
+  "scripts": {
+    "build": "npm run sass:build && npm run eleventy:build",
+    "start": "npm run sass:watch & eleventy --serve",
+    "eleventy:build": "eleventy",
+    "sass:build": "npx sass sass:_site/css --style=compressed",
+    "sass:watch": "npx sass sass:_site/css --style=compressed --watch"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nicolashery/nicolashery.com.git"
+  },
+  "author": "Nicolas Hery",
+  "license": "UNLICENSED",
+  "bugs": {
+    "url": "https://github.com/nicolashery/nicolashery.com/issues"
+  },
+  "homepage": "https://github.com/nicolashery/nicolashery.com#readme",
+  "devDependencies": {
+    "@11ty/eleventy": "^1.0.0",
+    "@11ty/eleventy-plugin-rss": "^1.1.2",
+    "@11ty/eleventy-plugin-syntaxhighlight": "^3.2.2",
+    "sass": "^1.49.0"
+  }
+}

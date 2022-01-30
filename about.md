@@ -1,6 +1,10 @@
 ---
 layout: page
 title: About
+image:
+  path: img/nicolas-hery@2x.jpg
+  width: 80
+  height: 80
 ---
 
 I'm a software developer based in Montreal. I was born in France, studied applied mathematics, started my career as a data analyst in New York, taught myself to code, and now am focused full-time on what I love doing: building quality software that solves real business problems.

@@ -18,7 +18,7 @@ When building an app, solving an actual problem and providing a good user experi
 
 The example app we'll be building here is a screen that's part of a larger app, some kind of game. This screen should allow the user to build an army before going into battle, based on units that are available to her as well as the resources she has gathered. Here's what that could look like:
 
-{% image "user-interface-data-01.png" "UI as data" "Sketching the user interface" %}
+{% cloudinaryImage "user-interface-data-01.png" "UI as data" "Sketching the user interface" %}
 
 What are the use-cases of this app? Let's separate them into two groups. The first group covers what the user can *do*:
 
@@ -432,11 +432,11 @@ The same guideline applies to other components. For instance, I could create the
 
 When we're done with the other components, we already have a fully-functional (albeit ugly) app. We can even start giving it to very early adopters (probably internally), to test the interactions, hook it up to other parts of the system (ex: a backend), etc.
 
-{% image "user-interface-data-02.png" "UI as data" "A fully-functional 'no-CSS' version of the app" %}
+{% cloudinaryImage "user-interface-data-02.png" "UI as data" "A fully-functional 'no-CSS' version of the app" %}
 
 The last step is adding the CSS (pardon my poor designer skills), tweaking the components to output the necessary DOM elements with correct class names, and voilà!
 
-{% image "user-interface-data-03.png" "UI as data" "The final version of the app with CSS" %}
+{% cloudinaryImage "user-interface-data-03.png" "UI as data" "The final version of the app with CSS" %}
 
 You can find a running version of the app [here](http://nicolashery.github.io/example-ui-as-data).
 

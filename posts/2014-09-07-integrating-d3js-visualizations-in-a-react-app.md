@@ -168,7 +168,7 @@ React.renderComponent(App(), document.body);
 
 And behold! We have a pretty chart with circles:
 
-{% image "d3js-react-integration-01.png" "D3.js and React" "A basic D3.js chart wrapped in a React component" %}
+{% cloudinaryImage "d3js-react-integration-01.png" "D3.js and React" "A basic D3.js chart wrapped in a React component" %}
 
 ## Adding pagination and statistics widgets
 
@@ -269,7 +269,7 @@ var App = React.createClass({
 
 That's it, we now have pagination! The `<Pagination>` component changes our "One Source Of Truth" through the convenience function `setAppState()`, which triggers a re-render and the new `data` and `domain` get passed down to the `<Chart>` component, causing `d3Chart` to display the correct "page" of data. If we wanted to remove the functionality, or use a different widget for it, all we need to do is remove or replace `<Pagination ... />` in `App.render()`.
 
-{% image "d3js-react-integration-02.png" "D3.js and React" "Adding the pagination widget" %}
+{% cloudinaryImage "d3js-react-integration-02.png" "D3.js and React" "Adding the pagination widget" %}
 
 We can also do something else with `App.state.data`. For example, let's add a `<Stats>` widget that will show some fancy **statistics** on the data being displayed:
 
@@ -349,7 +349,7 @@ var App = React.createClass({
 
 Thanks to "One Source Of Truth", we know that the statistics shown always correspond to the data displayed on the D3.js chart.
 
-{% image "d3js-react-integration-03.png" "D3.js and React" "Adding the statistics widget" %}
+{% cloudinaryImage "d3js-react-integration-03.png" "D3.js and React" "Adding the statistics widget" %}
 
 ## Adding tooltips
 
@@ -547,7 +547,7 @@ var Chart = React.createClass({
 
 And voilà! We have tooltips on hover:
 
-{% image "d3js-react-integration-04.png" "D3.js and React" "Adding tooltips on hover" %}
+{% cloudinaryImage "d3js-react-integration-04.png" "D3.js and React" "Adding tooltips on hover" %}
 
 Now, let's see why we went through all this trouble of making things stateless and not making too many assumptions. Let's say we want to add a widget with buttons that allow you to "Show all" or "Hide all" tooltips. The way we have everything set up, it will be rather easy!
 
@@ -611,7 +611,7 @@ var Chart = React.createClass({
 
 And there we go, with just a few lines of code we added a "show/hide all tooltips" functionality:
 
-{% image "d3js-react-integration-05.png" "D3.js and React" "Adding the 'show/hide all tooltips' widget" %}
+{% cloudinaryImage "d3js-react-integration-05.png" "D3.js and React" "Adding the 'show/hide all tooltips' widget" %}
 
 ## Conclusion
 

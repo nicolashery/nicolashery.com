@@ -1,0 +1,152 @@
+<style>
+/* RESET
+============================================================================*/
+
+html, body, div, span, applet, object, iframe, h1, h2, h3, h4, h5, h6, p, blockquote, pre, a, abbr, acronym, address, big, cite, code, del, dfn, em, img, ins, kbd, q, s, samp, small, strike, strong, sub, sup, tt, var, b, u, i, center, dl, dt, dd, ol, ul, li, fieldset, form, label, legend, table, caption, tbody, tfoot, thead, tr, th, td, article, aside, canvas, details, embed, figure, figcaption, footer, header, hgroup, menu, nav, output, ruby, section, summary, time, mark, audio, video {
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+/* BODY
+============================================================================*/
+
+/* Size and center on screen to simulate paper page */
+@media screen {
+  body {
+    margin: 40px auto;
+    width: 880px; /* Just play around with this to make it look like print */
+    padding: 40px 30px;
+    border: 1px solid #CCC;
+  }
+}
+
+/* Font */
+body {
+  font-family: Helvetica, arial, freesans, clean, sans-serif;
+  font-size: 14px;
+  line-height: 1.2;
+}
+
+/* Make font (and all "em" defined sizes) smaller for print to fit on 1 page */
+@media print {
+  body {
+    font-size: 11px;
+  }
+}
+
+
+/* HEADERS
+============================================================================*/
+
+h1, h2, h3, h4, h5, h6 {
+  line-height: 1.2;
+  font-weight: bold;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1 {
+  font-size: 2.2857em;
+  color: #000;
+}
+
+h2 {
+  font-size: 1.5em;
+  line-height: 1.6;
+  border-bottom: 1px solid #ccc;
+  color: #000;
+  margin-top: 0.7143em;
+}
+
+h3 {
+  font-size: 1.1429em;
+  color: #000;
+}
+
+h4 {
+  font-size: 1em;
+  color: #666;
+}
+
+/* LISTS
+============================================================================*/
+
+ul, ol {
+  padding-left: 1em; /* Should align bullet points with paragraphs */
+}
+
+li {
+  margin-top: 0.3571em;
+}
+
+/* LAYOUT
+============================================================================*/
+
+/* For clearing floats like a boss h5bp.com/q */
+.clearfix, .row {
+  *zoom: 1;
+}
+.clearfix:before, .clearfix:after,
+.row:before, .row:after {
+  display: table;
+  content: "";
+}
+.clearfix:after, .row:after {
+  clear: both;
+}
+
+/* Floats */
+.top-left, .top-right, .left, .right {
+  box-sizing: border-box;
+  float: left;
+}
+
+/* Top */
+/* Make sure the sum of the widths are 100% */
+.top-left {
+  width: 70%;
+  padding-right: 1.4286em;
+}
+
+.top-right {
+  width: 30%;
+}
+
+/* Entries */
+/* Make sure the sum of the widths are 100% */
+.left {
+  width: 15%;
+  padding-right: 1.4286em;
+}
+
+.right {
+  width: 85%;
+}
+
+/* Row vertical spacing */
+.row {
+  margin-top: 0.7143em;
+}
+
+.row-top {
+  margin-top: 0;
+}
+
+/* INTRO
+============================================================================*/
+
+.intro {
+  font-style: italic;
+  color: #666;
+  margin-top: 0.7143em;
+  font-size: 1.1429em;
+}
+
+/* LEFT
+============================================================================*/
+
+.left {
+  font-style: italic;
+  color: #666;
+}
+</style>

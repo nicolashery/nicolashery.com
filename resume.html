@@ -1,0 +1,151 @@
+---
+name: Nicolas Hery
+location: Montreal, Quebec
+email: hi@nicolashery.com
+website: https://nicolashery.com
+intro: >
+  Software developer with experience working across the technology stack.
+  Leadership and non-coding skills through communication with stakeholders, project management, teaching and mentoring.
+  Passionate about programming and avid learner of different languages and paradigms.
+  Focused on building maintainable and reliable software that solves real business problems.
+experience:
+  - start: Sep 2015
+    end: Present
+    title: Senior Software Developer
+    location: Busbud, Montreal
+    items:
+      - Worked as a full-stack web developer on the customer website, as well as backend services and internal tools
+      - Delivered major projects by communicating with stakeholders, designing data models and interfaces, producing technical specifications, and coding the implementation
+      - Increased confidence in deployment and code maintainability, by introducing TypeScript and other static analysis tools, leveraging a new end-to-end testing framework, improving monitoring and logging, and prioritizing tasks to reduce technical debt
+      - Improved website performance, by reducing client-side JavaScript bundle sizes, finding opportunities to optimize code execution, implementing pagination for the search page
+      - Grew the team by interviewing candidates, onboarding new team members, writing documentation, being a prolific code reviewer, mentoring and teaching (gave lunch & learn presentations on TypeScript, and Algebraic Data Types)
+  - start: Jan 2015
+    end: Aug 2015
+    title: Web Developer
+    location: Freelance, Montreal
+    items:
+      - Worked with a startup to build the prototype of a solution that helps small businesses manage their data
+      - Built the interface of an MVP used to explore a large database of industry data and visualize key metrics
+  - start: Oct 2013
+    end: Dec 2014
+    title: Contract Web Developer
+    location: Tidepool, Paris & Montreal
+    items:
+      - Worked remotely for the non-profit organization whose mission is to reduce the burden of Type-1 Diabetes
+      - Helped build the core platform which synchronizes diabetes data from many medical devices
+      - Built with a small team of developers the MVP version of Blip, a web-based data visualization tool
+  - start: Jan 2010
+    end: May 2013
+    title: Data Analyst
+    location: FreshDirect, New York
+    items:
+      - Built a web application that aggregates data from multiple systems and generates a demand forecasting Excel sheet
+      - Implemented a pilot program that uses an innovative cloud-based product forecasting service
+      - Wrote and implemented several scripts to transform and load data, as well as automate redundant tasks
+  - start: Oct 2009
+    end: Dec 2009
+    title: Student Project
+    location: Google, New York
+    items:
+      - Managed a team of students from Columbia University on a project for Google's Operations Research group
+      - Used Python to simulate job scheduling in data centers and optimize the algorithm to decrease power consumption
+  - start: May 2009
+    end: Jul 2009
+    title: Intern Consultant
+    location: Cylad Consulting, France
+    items:
+      - Worked with a team of consultants for Airbus on the project planning of the Airbus 350 XWB
+      - Developed an Excel VBA tool to create Gantt charts from the main scheduling platform's data
+education:
+  - start: 2009
+    end: 2010
+    school: Columbia University
+    degree: MS in Operations Research
+    location: New York
+    items:
+      - "Selected coursework: Deterministic and Stochastic Models, Corporate Finance, Entrepreneurship, Supply Chain"
+  - start: 2007
+    end: 2009
+    school: Ecole Centrale de Nantes
+    degree: MS in Industrial Engineering
+    location: France
+    items:
+      - "Selected coursework: Probability and Statistics, Calculus, Economics, International Strategy"
+skills:
+  - category: Best at
+    content: TypeScript/JavaScript, Node.js, React
+  - category: Good at
+    content: Haskell, Python, PostgreSQL
+---
+
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <title>{{ name }}</title>
+
+  {% include "resume-style.html" %}
+</head>
+
+<body>
+  <div class="row row-top">
+    <div class="top-left">
+      <h1>{{ name }}</h1>
+    </div>
+    <div class="top-right">
+      {{ location }}<br />
+      {{ email }}<br />
+      {{ website }}<br />
+    </div>
+  </div>
+
+  <div class="intro">
+    {{ intro }}
+  </div>
+
+  <h2>Experience</h2>
+  {% for entry in experience %}
+  <div class="row">
+    <div class="left">{{ entry.start }} -<br />{{ entry.end }}</div>
+    <div class="right">
+      <h3>{{ entry.title }}</h3>
+      <h4>{{ entry.location }}</h4>
+      <ul>
+        {% for item in entry.items %}
+        <li>{{ item }}</li>
+        {% endfor %}
+      </ul>
+    </div>
+  </div>
+  {% endfor %}
+
+  <h2>Education</h2>
+  {% for entry in education %}
+  <div class="row">
+    <div class="left">{{ entry.start }} - {{ entry.end }}</div>
+    <div class="right">
+      <h3>{{ entry.school }}</h3>
+      <h4>{{ entry.degree }}, {{ entry.location }}</h4>
+      <ul>
+        {% for item in entry.items %}
+        <li>{{ item }}</li>
+        {% endfor %}
+      </ul>
+    </div>
+  </div>
+  {% endfor %}
+
+  <h2>Skills</h2>
+  {% for entry in skills %}
+  <div class="row">
+    <div class="left">{{ entry.category }}</div>
+    <div class="right">{{ entry.content }}</div>
+  </div>
+  {% endfor %}
+</body>
+
+</html>

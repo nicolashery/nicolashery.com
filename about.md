@@ -19,7 +19,7 @@ As an avid learner, I enjoy reading a lot about different programming languages,
 - [Twitter](https://twitter.com/nicolas_hery)
 - [GitHub](https://github.com/nicolashery)
 - [LinkedIn](http://www.linkedin.com/in/nicolashery)
-- [Resume](/nicolas-hery.pdf)
+- Resume: [HTML](/resume/), [PDF](https://res.cloudinary.com/{{site.cloudinaryCloudName}}/image/upload/nicolas-hery.pdf)
 - [RSS](/feed.xml)
 
 ## The toolbelt

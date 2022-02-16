@@ -63,7 +63,7 @@ Jekyll has great [documentation](http://jekyllrb.com/docs/home/) to help you lea
 
 A basic directory structure looks something like this:
 
-```
+```text
 .
 ├── _includes/
 |   ├── footer.html
@@ -100,7 +100,7 @@ $ npm install -g grunt-cli
 
 Let's create directories for our source files, and add them to the `exclude` list in `_config.yml` so they are not copied to the site:
 
-```
+```text
 ...
 ├── css/
 └── js/
@@ -110,7 +110,7 @@ If you use preprocessors, like [Sass](http://sass-lang.com/), [LESS](http://less
 
 We also create directories for our concatenated (`debug/`) and minified (`build/`) files, which will be copied to the site, and add them to `.gitignore` so they are not tracked in version control:
 
-```
+```text
 ...
 ├── debug/
 └── build/
@@ -118,7 +118,7 @@ We also create directories for our concatenated (`debug/`) and minified (`build/
 
 Finally, we create an `assets/` directory for larger files such as images, also excluded from version control in `.gitignore`:
 
-```
+```text
 ...
 └── assets/
 ```
@@ -187,7 +187,7 @@ I then configure the Grunt plugin [grunt-contrib-compass](https://npmjs.org/pack
 
 Using preprocessors helps you keep your CSS maintainable and modular. If interested, you can dive into the work around [Object-Oriented CSS (OOCSS)](http://coding.smashingmagazine.com/2011/12/12/an-introduction-to-object-oriented-css-oocss/) or [SMACS](http://smacss.com/). To start simple, I find it a good practice to separate styles specific to certain parts your website in different files, and prefix the CSS rules with those "module" names. For example:
 
-```
+```text
 sass/
 ├── ui/
 |   ├── _footer.scss

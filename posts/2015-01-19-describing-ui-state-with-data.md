@@ -72,7 +72,7 @@ As a JavaScript object, here is one way we can model our app state:
 
 Note that this object only contains the "core state". For example, the `resources` attribute holds the *starting resources* and we don't keep track of the *remaining resources* the user actually sees on screen. Indeed, the remaining resources are a function of the starting resources and the count of each unit, so it is "derived state":
 
-```
+```text
 f(starting resources, count of each unit) -> remaining resources
 f(core state) -> derived state
 ```
@@ -122,7 +122,7 @@ State.initial = function() {
 
 Now we'll create **Actions** to cover the use-cases where the user interacts with the app. An action is just a function that takes the current version of the app state and returns a new state:
 
-```
+```text
 action(current state) -> new state
 ```
 
@@ -149,7 +149,7 @@ You can find the rest of the actions implemented in [Actions.js](https://github.
 
 Next we'll create **Projections** to shape the core application state in a way that's ready to be rendered into a UI component. A projection is simply a function that takes the app state and returns some "derived state" or "view" of the app state:
 
-```
+```text
 projection(state) -> view
 ```
 

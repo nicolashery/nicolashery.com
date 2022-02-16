@@ -7,6 +7,10 @@ image:
   height: 80
 ---
 
+<div class="about-profile-picture">
+  {% cloudinaryImage "nicolas-hery-square.jpg" "Profile picture" "" "c_scale,w_400" %}
+</div>
+
 I'm a software developer based in Montreal. I was born in France, studied applied mathematics, started my career as a data analyst in New York, taught myself to code, and now am focused full-time on what I love doing: building quality software that solves real business problems.
 
 My passion is programming, but I also use my non-coding skills extensively: communicating with stakeholders, writing documentation, managing projects and teams, interviewing and onboarding new team members, teaching and mentoring.

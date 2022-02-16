@@ -28,7 +28,7 @@ In this example, I'm going to use some silly made-up data (its format inspired b
 
 Let's say our objective is to turn a `data.csv` file containing something like:
 
-```
+```text
 Game Export (v1.2)
 GameId,1234567
 Player,1,Homer Simpson

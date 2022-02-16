@@ -1,0 +1,382 @@
+/* Variables
+--------------------------------------------------------------------------- */
+
+:root {
+  --main-width: 640px;
+  --header-height: 60px;
+  --footer-height: 60px;
+  --gap: 24px;
+  --content-gap: 2rem;
+
+  --font-size: 16px;
+  --font-size-small: 14px;
+  --font-size-code: 14px;
+
+  --text: rgba(0, 0, 0, 0.88);
+  --text-muted: rgba(0, 0, 0, 0.56);
+
+  /* https://colorhunt.co/palette/00bcd4b2ebf2ff5722dd2c00 */
+  --primary: #ff5722;
+  --secondary: #dd2c00;
+  --secondary-dark: #a22101;
+
+  --code-bg: #eee;
+
+  --header-height: 60px;
+  --logo-size: 40px;
+}
+
+/* Reset
+--------------------------------------------------------------------------- */
+
+/* Inspired byhttps://github.com/csstools/sanitize.css/blob/main/sanitize.css */
+
+*,
+::before,
+::after {
+  box-sizing: border-box;
+  background-repeat: no-repeat;
+}
+
+::before,
+::after {
+  text-decoration: inherit;
+  vertical-align: inherit;
+}
+
+:root {
+  cursor: default;
+  line-height: 1.5;
+  overflow-wrap: break-word;
+  -moz-tab-size: 4;
+  tab-size: 4;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+}
+
+/* Fonts
+--------------------------------------------------------------------------- */
+
+/* Inspired by https://github.com/csstools/sanitize.css/blob/main/typography.css */
+
+html {
+  font-family: /* Google Font */ "Fira Sans", system-ui,
+    /* macOS 10.11-10.12 */ -apple-system, /* Windows 6+ */ "Segoe UI",
+    /* Android 4+ */ "Roboto", /* Ubuntu 10.10+ */ "Ubuntu",
+    /* Gnome 3+ */ "Cantarell", /* KDE Plasma 5+ */ "Noto Sans",
+    /* fallback */ sans-serif, /* macOS emoji */ "Apple Color Emoji",
+    /* Windows emoji */ "Segoe UI Emoji", /* Windows emoji */ "Segoe UI Symbol",
+    /* Linux emoji */ "Noto Color Emoji";
+}
+
+code,
+kbd,
+samp,
+pre {
+  font-family: ui-monospace, /* macOS 10.10+ */ "Menlo",
+    /* Windows 6+ */ "Consolas", /* Android 4+ */ "Roboto Mono",
+    /* Ubuntu 10.10+ */ "Ubuntu Monospace", /* KDE Plasma 5+ */ "Noto Mono",
+    /* KDE Plasma 4+ */ "Oxygen Mono",
+    /* Linux/OpenOffice fallback */ "Liberation Mono", /* fallback */ monospace,
+    /* macOS emoji */ "Apple Color Emoji", /* Windows emoji */ "Segoe UI Emoji",
+    /* Windows emoji */ "Segoe UI Symbol", /* Linux emoji */ "Noto Color Emoji";
+}
+
+/* Typography
+--------------------------------------------------------------------------- */
+
+body {
+  font-size: var(--font-size);
+  color: var(--text);
+  background: #fff;
+}
+
+pre {
+  font-size: var(--font-size-code);
+}
+
+p,
+ul,
+ol {
+  line-height: 1.8;
+  margin-top: var(--content-gap);
+  margin-bottom: var(--content-gap);
+}
+
+ul,
+ol {
+  padding-left: 1.5em;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-weight: 700;
+  line-height: 1.2;
+  margin-top: var(--content-gap);
+  margin-bottom: var(--content-gap);
+}
+
+h1 {
+  font-size: 3rem;
+  margin-top: 0;
+}
+
+h2 {
+  font-size: 2rem;
+  margin-top: calc(2 * var(--content-gap));
+}
+
+h3 {
+  font-size: 1.5rem;
+  margin-top: calc(1.5 * var(--content-gap));
+  color: var(--text-muted);
+}
+
+/* We don't use h4-h6 */
+h4,
+h5,
+h6 {
+  font-size: 1.25rem;
+}
+
+a {
+  color: var(--secondary);
+  text-decoration: underline;
+}
+
+a:hover,
+a:focus {
+  color: var(--secondary-dark);
+}
+
+code {
+  font-size: 85%;
+  font-weight: 700;
+  padding: 3px 5px;
+  border-radius: 2px;
+  background: var(--code-bg);
+}
+
+pre code {
+  font-size: inherit;
+  font-weight: inherit;
+  padding: 0;
+  border-radius: 0;
+  background: none;
+}
+
+pre {
+  margin-top: var(--content-gap);
+  margin-bottom: var(--content-gap);
+}
+
+/* Header
+--------------------------------------------------------------------------- */
+
+.header-navbar {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+
+  padding: calc(var(--gap) / 2) var(--gap);
+}
+
+.header-navbar a {
+  display: block;
+  line-height: var(--logo-size);
+}
+
+.header-navbar a.header-brand {
+  display: flex;
+  align-items: center;
+  margin-right: var(--gap);
+
+  font-size: 24px;
+  font-weight: 700;
+
+  color: var(--primary);
+  text-decoration: none;
+}
+
+.header-logo {
+  width: var(--logo-size);
+  height: var(--logo-size);
+  border-radius: calc(var(--logo-size) / 2);
+  margin-right: 12px;
+}
+
+.header-menu {
+  display: flex;
+  align-items: center;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  word-break: keep-all;
+  overflow-x: auto;
+}
+
+.header-menu li {
+  margin-left: var(--gap);
+}
+
+.header-menu li:first-child {
+  margin-left: 0;
+}
+
+.header-menu a {
+  font-size: var(--font-size-small);
+  color: var(--text-muted);
+  text-decoration: none;
+}
+
+.header-menu a:hover,
+.header-menu a:focus {
+  color: var(--secondary);
+  text-decoration: underline;
+}
+
+/* Layout
+--------------------------------------------------------------------------- */
+
+.main,
+.footer {
+  max-width: calc(var(--main-width) + var(--gap) * 2);
+  margin-left: auto;
+  margin-right: auto;
+  padding: var(--gap);
+}
+
+.main {
+  min-height: calc(100vh - var(--header-height) - var(--footer-height));
+}
+
+/* Footer
+--------------------------------------------------------------------------- */
+
+.footer {
+  font-size: 13px;
+  color: var(--text-muted);
+
+  margin-bottom: var(--gap);
+}
+
+.footer-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.footer p {
+  margin: 0;
+}
+
+.footer p + p::before {
+  content: "·";
+  margin-left: 5px;
+  margin-right: 2px;
+}
+
+.footer a {
+  color: var(--text-muted);
+  text-decoration: none;
+}
+
+.footer a:hover,
+.footer a:focus {
+  color: var(--secondary);
+  text-decoration: underline;
+}
+
+/* Images
+--------------------------------------------------------------------------- */
+
+img {
+  display: block;
+  max-width: 100%;
+}
+
+figure {
+  margin: 0;
+  margin-top: var(--content-gap);
+  margin-bottom: var(--content-gap);
+}
+
+figure figcaption {
+  margin-top: 0.5rem;
+  font-size: var(--font-size-small);
+  font-style: italic;
+  color: var(--text-muted);
+  text-align: center;
+}
+
+figure img {
+  margin-inline: auto;
+}
+
+/* Posts
+--------------------------------------------------------------------------- */
+
+.posts-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.posts-list li {
+  margin-bottom: var(--gap);
+}
+
+.posts-link {
+  font-size: 1.25rem;
+}
+
+.posts-date {
+  font-size: var(--font-size-small);
+  line-height: 1.2;
+  color: var(--text-muted);
+}
+
+/* Post
+--------------------------------------------------------------------------- */
+
+.post-title {
+  margin-bottom: 4px;
+}
+
+.post-date {
+  font-size: var(--font-size-small);
+  line-height: 1.5;
+  color: var(--text-muted);
+}
+
+/* About
+--------------------------------------------------------------------------- */
+
+.about-profile-picture img,
+.about-profile-picture figure,
+.about-profile-picture figcaption {
+  margin: 0;
+}
+
+.about-profile-picture img {
+  width: 200px;
+  height: 200px;
+
+  margin-inline: auto;
+}
+
+@media (min-width: 400px) {
+  .about-profile-picture {
+    float: right;
+  }
+}

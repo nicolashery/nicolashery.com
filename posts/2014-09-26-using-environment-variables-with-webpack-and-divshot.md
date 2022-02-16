@@ -102,7 +102,7 @@ console.log('Build successfull');
 
 Make sure to update your `.gitignore` with the necessary things:
 
-```
+```text
 .divshot-cache
 dist
 __

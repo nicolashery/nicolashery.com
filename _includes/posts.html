@@ -1,12 +1,10 @@
 <section class="posts">
-  <ul class="posts--list">
+  <ul class="posts-list">
     {% assign posts_latest_first = collections.posts | reverse %}
     {% for post in posts_latest_first %}
       <li>
-        <a class="posts--link" href="{{ post.url }}">
-          <div class="posts--title">{{ post.data.title }}</div>
-          <div class="posts--date">{{ post.date | date: "%d %B, %Y" }}</div>
-        </a>
+        <a class="posts-link" href="{{ post.url }}">{{ post.data.title }}</a>
+        <div class="posts-date">{{ post.date | date: "%d %B, %Y" }}</div>
       </li>
     {% endfor %}
   </ul>

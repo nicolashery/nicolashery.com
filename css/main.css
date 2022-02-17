@@ -2,9 +2,8 @@
 --------------------------------------------------------------------------- */
 
 :root {
-  --main-width: 640px;
-  --header-height: 60px;
-  --footer-height: 60px;
+  --content-width: 640px;
+  --logo-size: 40px;
   --gap: 24px;
   --content-gap: 2rem;
 
@@ -21,9 +20,6 @@
   --secondary-dark: #a22101;
 
   --code-bg: #eee;
-
-  --header-height: 60px;
-  --logo-size: 40px;
 }
 
 /* Reset
@@ -250,14 +246,10 @@ pre {
 
 .main,
 .footer {
-  max-width: calc(var(--main-width) + var(--gap) * 2);
+  max-width: calc(var(--content-width) + var(--gap) * 2);
   margin-left: auto;
   margin-right: auto;
   padding: var(--gap);
-}
-
-.main {
-  min-height: calc(100vh - var(--header-height) - var(--footer-height));
 }
 
 /* Footer
@@ -266,8 +258,6 @@ pre {
 .footer {
   font-size: 13px;
   color: var(--text-muted);
-
-  margin-bottom: var(--gap);
 }
 
 .footer-row {

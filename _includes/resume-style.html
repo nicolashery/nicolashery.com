@@ -132,6 +132,13 @@ li {
   margin-top: 0;
 }
 
+/* Avoid page breaks in the middle of a div when printing */
+@media print {
+  div {
+    break-inside: avoid;
+  }
+}
+
 /* Intro
 --------------------------------------------------------------------------- */
 

@@ -349,6 +349,14 @@ figure img {
   color: var(--text-muted);
 }
 
+/* Table of contents
+--------------------------------------------------------------------------- */
+
+.table-of-contents-header {
+  margin-bottom: -1rem;
+  font-weight: 700;
+}
+
 /* About
 --------------------------------------------------------------------------- */
 

@@ -110,14 +110,12 @@ skills:
 </head>
 
 <body>
-  <div class="row row-top">
-    <div class="top-left">
-      <h1>{{ name }}</h1>
-    </div>
-    <div class="top-right">
-      {{ location }}<br />
-      {{ email }}<br />
-      {{ website }}<br />
+  <div class="header">
+    <h1>{{ name }}</h1>
+    <div class="contact">
+      <div>{{ location }}</div>
+      <div>{{ email }}</div>
+      <div>{{ website }}</div>
     </div>
   </div>
 
@@ -128,7 +126,11 @@ skills:
   <h2>Experience</h2>
   {% for entry in experience %}
   <div class="row">
-    <div class="left">{{ entry.start }} -<br />{{ entry.end }}</div>
+    <div class="left">
+      <div>{{ entry.start }}<span class="sep-lg"> -</span></div>
+      <div class="sep-sm">-</div>
+      <div>{{ entry.end }}</div>
+    </div>
     <div class="right">
       <h3>{{ entry.title }}</h3>
       <h4>{{ entry.location }}</h4>
@@ -144,7 +146,11 @@ skills:
   <h2>Education</h2>
   {% for entry in education %}
   <div class="row">
-    <div class="left">{{ entry.start }} - {{ entry.end }}</div>
+    <div class="left">
+      <div>{{ entry.start }}<span class="sep-lg"> -</span></div>
+      <div class="sep-sm">-</div>
+      <div>{{ entry.end }}</div>
+    </div>
     <div class="right">
       <h3>{{ entry.school }}</h3>
       <h4>{{ entry.degree }}, {{ entry.location }}</h4>

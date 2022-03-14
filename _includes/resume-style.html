@@ -8,6 +8,13 @@ html, body, div, span, applet, object, iframe, h1, h2, h3, h4, h5, h6, p, blockq
   border: 0;
 }
 
+*,
+::before,
+::after {
+  box-sizing: border-box;
+}
+
+
 /* Body
 --------------------------------------------------------------------------- */
 
@@ -15,9 +22,17 @@ html, body, div, span, applet, object, iframe, h1, h2, h3, h4, h5, h6, p, blockq
 @media screen {
   body {
     margin: 40px auto;
-    width: 880px; /* Just play around with this to make it look like print */
     padding: 40px 30px;
+    max-width: 940px;
     border: 1px solid #CCC;
+  }
+}
+
+@media screen and (max-width: 940px) {
+  body {
+    margin: 20px auto;
+    padding: 0 20px;
+    border: none;
   }
 }
 
@@ -34,7 +49,6 @@ body {
     font-size: 11px;
   }
 }
-
 
 /* Headers
 --------------------------------------------------------------------------- */
@@ -82,54 +96,72 @@ li {
 /* Layout
 --------------------------------------------------------------------------- */
 
-/* For clearing floats like a boss h5bp.com/q */
-.clearfix, .row {
-  *zoom: 1;
-}
-.clearfix:before, .clearfix:after,
-.row:before, .row:after {
-  display: table;
-  content: "";
-}
-.clearfix:after, .row:after {
-  clear: both;
+.header {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: start;
 }
 
-/* Floats */
-.top-left, .top-right, .left, .right {
-  box-sizing: border-box;
-  float: left;
+@media screen and (max-width: 440px)  {
+  .header {
+    flex-direction: column;
+  }
+
+  .contact {
+    margin-top: 0.7143em;
+  }
 }
 
-/* Top */
-/* Make sure the sum of the widths are 100% */
-.top-left {
-  width: 70%;
-  padding-right: 1.4286em;
+.row {
+  display: flex;
+  flex-direction: row;
+  margin-top: 0.7143em;
 }
 
-.top-right {
-  width: 30%;
-}
-
-/* Entries */
-/* Make sure the sum of the widths are 100% */
 .left {
-  width: 15%;
+  display: flex;
+  flex-direction: column;
+  white-space: nowrap;
   padding-right: 1.4286em;
+  width: 15%;
 }
 
 .right {
   width: 85%;
 }
 
-/* Row vertical spacing */
-.row {
-  margin-top: 0.7143em;
+.sep-sm {
+  display: none;
 }
 
-.row-top {
-  margin-top: 0;
+.sep-lg {
+  display: inline;
+}
+
+@media screen and (max-width: 570px)  {
+  .row {
+    flex-direction: column;
+  }
+
+  .left {
+    flex-direction: row;
+    padding-right: 0;
+    width: 100%;
+  }
+
+  .sep-sm {
+    display: block;
+    margin: 0 4px;
+  }
+
+  .sep-lg {
+    display: none;
+  }
+
+  .right {
+    width: 100%;
+  }
 }
 
 /* Avoid page breaks in the middle of a div when printing */

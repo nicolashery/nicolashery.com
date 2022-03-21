@@ -128,12 +128,12 @@ h1 {
 
 h2 {
   font-size: 2rem;
-  margin-top: calc(2 * var(--content-gap));
+  margin-top: calc(1.5 * var(--content-gap));
 }
 
 h3 {
   font-size: 1.5rem;
-  margin-top: calc(1.5 * var(--content-gap));
+  margin-top: calc(1.25 * var(--content-gap));
   color: var(--text-muted);
 }
 

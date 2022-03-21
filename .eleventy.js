@@ -11,12 +11,7 @@ module.exports = function (eleventyConfig) {
   eleventyConfig.addPassthroughCopy("css");
   eleventyConfig.addPassthroughCopy("img");
   eleventyConfig.addPassthroughCopy("keybase.txt");
-  eleventyConfig.addPassthroughCopy("nicolas-hery.pdf");
   eleventyConfig.addPassthroughCopy("robots.txt");
-
-  eleventyConfig.setBrowserSyncConfig({
-    files: "./_site/css/**/*.css",
-  });
 
   eleventyConfig.addPlugin(syntaxHighlight);
   eleventyConfig.addPlugin(pluginRss);

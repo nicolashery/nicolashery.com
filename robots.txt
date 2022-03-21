@@ -1,2 +1,4 @@
+Sitemap: https://nicolashery.com/sitemap.xml
+
 User-agent: *
 Allow: /

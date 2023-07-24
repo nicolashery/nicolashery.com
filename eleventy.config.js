@@ -1,6 +1,7 @@
 const syntaxHighlight = require("@11ty/eleventy-plugin-syntaxhighlight");
 const pluginRss = require("@11ty/eleventy-plugin-rss");
-const markdownIt = require("markdown-it");
+const markdownItAnchor = require("markdown-it-anchor");
+const markdownItTableOfContents = require("markdown-it-table-of-contents");
 
 const imageShortcode = require("./lib/image.shortcode");
 const cloudinaryImageShortcode = require("./lib/cloudinaryImage.shortcode");
@@ -28,18 +29,15 @@ module.exports = function (eleventyConfig) {
   });
 
   // Customize Markdown rendering
-  const markdownLib = markdownIt({
-    // Allow HTML tags in Markdown (enabled by default in Eleventy)
-    html: true,
-  })
+  eleventyConfig.amendLibrary("md", (mdLib) => {
     // Generates anchors for all headings
-    .use(require("markdown-it-anchor"))
+    mdLib.use(markdownItAnchor);
+
     // Generate table of contents when `[[toc]]` is included in Markdown
-    .use(require("markdown-it-table-of-contents"), {
+    mdLib.use(markdownItTableOfContents, {
       containerHeaderHtml: `<div class="table-of-contents-header">Table of contents</div>`,
     });
-
-  eleventyConfig.setLibrary("md", markdownLib);
+  });
 
   return {
     dir: {

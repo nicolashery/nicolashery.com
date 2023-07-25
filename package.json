@@ -5,7 +5,9 @@
   "main": "index.js",
   "scripts": {
     "build": "npx @11ty/eleventy",
-    "start": "npx @11ty/eleventy --serve --incremental"
+    "start": "npx @11ty/eleventy --serve --incremental",
+    "minify-css": "npx lightningcss --minify _site/css/main.css _site/css/prism-one-dark.css --output-dir _site/css",
+    "build-production": "npm run build && npm run minify-css"
   },
   "repository": {
     "type": "git",
@@ -21,6 +23,7 @@
     "@11ty/eleventy": "^2.0.1",
     "@11ty/eleventy-plugin-rss": "^1.2.0",
     "@11ty/eleventy-plugin-syntaxhighlight": "^5.0.0",
+    "lightningcss-cli": "^1.21.5",
     "markdown-it-anchor": "^8.6.7",
     "markdown-it-table-of-contents": "^0.6.0"
   }

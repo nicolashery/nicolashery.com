@@ -1,10 +1,3 @@
 [build]
   publish = "_site"
-  command = "npm run build"
-
-[build.processing]
-  skip_processing = false
-
-[build.processing.css]
-  bundle = false
-  minify = true
+  command = "npm run build-production"

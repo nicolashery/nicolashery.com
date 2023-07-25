@@ -152,7 +152,7 @@ module.exports = {
 
   // Page title without site title or description appended
   pageTitle: (data) => data.title || data.site.title,
-    
+
   // ...
 };
 ```
@@ -224,6 +224,8 @@ We can also add some configuration options for the processing of static assets. 
 There is a setting to enable **bundling** of CSS or JS files. I chose not to because I only have two source files, `main.css` and `prism-one-dark.css`. It also gives me the option to optimize by not including the syntax highlighting CSS on some of the site's pages.
 
 These post-processing options from Netlify are nice because they allow me to keep the build setup simple in the repository itself, and reduce the number of Node.js dependencies. The tradeoff is that it ties me to Netlify a little bit.
+
+**UPDATE (2023-07-25):** Netlify has since [deprecated the asset optimization feature](https://www.netlify.com/blog/deprecation-of-post-processing-asset-optimization-feature/). One solution is to use a CSS minification CLI tool such as [Lightning CSS](https://lightningcss.dev/docs.html#from-the-cli) in our production build step.
 
 Make sure your `.toml` file doesn't contain any syntax errors before pushing. If you don't want to install an editor extension to do so, you can easily check it with [an online TOML validator](https://www.toml-lint.com/).
 
@@ -334,6 +336,8 @@ The style needs of this site are small, so I kept everything in a single `css/ma
 
 Since I'm using [Netlify's post-processing](https://docs.netlify.com/site-deploys/post-processing/), I don't need to install a library to minify the CSS. Nor would I need a library to bundle multiple files if I had more than one.
 
+**UPDATE (2023-07-25):** Netlify has since [deprecated the asset optimization feature](https://www.netlify.com/blog/deprecation-of-post-processing-asset-optimization-feature/). One solution is to use a CSS minification CLI tool such as [Lightning CSS](https://lightningcss.dev/docs.html#from-the-cli) in our production build step.
+
 [Hugo's Paper theme](https://github.com/nanxiaobei/hugo-paper/blob/main/assets/app.css) was one source of inspiration for the design of this site. I stumbled across it via [Philipp Tanlak's blog](https://philipptanlak.com/). I liked the simplicity and contrast.
 
 Some of the CSS reset rules were taken from [sanitize.css](https://csstools.github.io/sanitize.css/), although I didn't use all of it.
@@ -409,7 +413,7 @@ module.exports = function (cloudinaryCloudName) {
 It's a closure around the Cloud Name, and you can pass in the value when you register the shortcode in `.eleventy.js`:
 
 ```javascript
-const cloudinaryImageShortcode = require("./lib/cloudinaryImage.shortcode");	
+const cloudinaryImageShortcode = require("./lib/cloudinaryImage.shortcode");
 const site = require("./_data/site.json");
 
 module.exports = function (eleventyConfig) {

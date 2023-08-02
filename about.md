@@ -17,7 +17,7 @@ As a software engineer, I work full-stack both on the backend and frontend parts
 
 As an engineering manager, my focus has been on creating high-performing and empowered teams, as well as building a sustainable flow to deliver quality software. Some ways I've achieved this are: improving communication between frontend, backend, UX, and product, encouraging the habit of taking meeting notes, building a sense of ownership notably through QA, involving engineers in product discovery and decisions.
 
-From a technical perspective, I consider myself a polyglot and have worked in enough programming languages that I feel comfortable learning a new one for a particular task or team. I have a strong inclination for [static types](https://en.wikipedia.org/wiki/Type_system#Static_type_checking) and have good experience with [functional programming](https://en.wikipedia.org/wiki/Functional_programming). Most recently I've used [TypeScript](https://www.typescriptlang.org/), [Haskell](https://www.haskell.org/), [Go](https://go.dev/), [Java](https://dev.java/).
+From a technical perspective, I consider myself a polyglot and have worked in enough programming languages that I feel comfortable learning a new one for a particular task or team. I have a strong inclination for [static types](https://en.wikipedia.org/wiki/Type_system#Static_type_checking) and have good experience with [functional programming](https://en.wikipedia.org/wiki/Functional_programming). Most recently I've used [TypeScript](https://www.typescriptlang.org/), [Haskell](https://www.haskell.org/), [Go](https://go.dev/), [Rust](https://www.rust-lang.org/).
 
 ## Keep in touch
 
@@ -35,7 +35,7 @@ As mentioned, I'm an avid learner of new programming languages and technologies.
 - [TypeScript](https://www.typescriptlang.org/) ([Node.js](http://nodejs.org/), [React](http://facebook.github.io/react/))
 - [Haskell](https://www.haskell.org/) ([Yesod](https://www.yesodweb.com/), [Servant](https://docs.servant.dev/))
 - [Go](https://go.dev/)
-- [Java](https://dev.java/)
+- [Rust](https://www.rust-lang.org/)
 - [Python](http://python.org/) ([Flask](https://flask.palletsprojects.com/), [Pandas](http://pandas.pydata.org/))
 - [PostgreSQL](http://www.postgresql.org/)
 - [Redis](http://redis.io/)

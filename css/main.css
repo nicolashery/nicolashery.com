@@ -20,6 +20,7 @@
   --secondary-dark: #a22101;
 
   --code-bg: #eee;
+  --border: #ddd;
 }
 
 /* Reset
@@ -109,6 +110,14 @@ ol {
   padding-left: 1.5em;
 }
 
+ul ul,
+ul ol,
+ol ol,
+ol ul {
+  margin-top: 0;
+  margin-bottom: 0;
+}
+
 h1,
 h2,
 h3,
@@ -173,6 +182,14 @@ pre code {
 pre {
   margin-top: var(--content-gap);
   margin-bottom: var(--content-gap);
+}
+
+blockquote {
+  margin: var(--content-gap) 0;
+  padding: 0 1em;
+  color: var(--text-muted);
+  border-left: 4px solid var(--border);
+
 }
 
 /* Header

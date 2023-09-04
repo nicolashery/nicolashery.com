@@ -8,3 +8,27 @@ layout: default
   <p><em>{{ description }}</em></p>
   {{ content }}
 </article>
+
+<div class="post-more">
+  <h2>Continue reading</h2>
+  {% assign previousPost = collections.posts | getPreviousCollectionItem %}
+  {% assign nextPost = collections.posts | getNextCollectionItem %}
+  <ul>
+    {% if nextPost %}
+    <li>
+      <div class="post-more-type">Next post</div>
+      <a href="{{ nextPost.url }}">{{ nextPost.data.title }}</a>
+    </li>
+    {% endif %}
+    {% if previousPost %}
+    <li>
+      <div class="post-more-type">Previous post</div>
+      <a href="{{ previousPost.url }}">{{ previousPost.data.title }}</a>
+    </li>
+    {% endif %}
+    <li>
+      <div class="post-more-type">All posts</div>
+      <a href="/">Home</a>
+    </li>
+  </ul>
+</div>

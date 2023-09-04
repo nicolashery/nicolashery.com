@@ -366,6 +366,33 @@ figure img {
   color: var(--text-muted);
 }
 
+.post-more {
+  margin-top: calc(1.5 * var(--content-gap));
+  padding-top: var(--content-gap);
+  border-top: 1px solid var(--border);
+}
+
+.post-more h2 {
+  margin: 0;
+  font-size: 1.25rem;
+}
+
+.post-more ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.post-more li {
+  margin-top: var(--content-gap);
+}
+
+.post-more-type {
+  font-size: var(--font-size-small);
+  line-height: 1.2;
+  color: var(--text-muted);
+}
+
 /* Table of contents
 --------------------------------------------------------------------------- */
 

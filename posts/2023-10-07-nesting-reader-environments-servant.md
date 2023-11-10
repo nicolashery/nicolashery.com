@@ -24,3 +24,230 @@ In this article, I'll assume familiarity with Servant and the ReaderT design pat
 
 ## Server vs. request environment
 
+Before we dive into building nested APIs and defining different levels of context for each sub-API, let's take a look at what we can think of "level 0": the _server_ context or environment as it is called in the ReaderT pattern. We'll treat it separately from all other levels of context, which are _request_ environments.
+
+What makes the server environment different is that it is created only once, upon application startup, and the resources or attributes that it holds will be _shared across requests_. The request environments on the other hand are _recreated on every request_, and the attributes that it holds are scoped to that particular request.
+
+This is an important distinction and was actually the source of a small bug on a codebase I worked on.
+
+Let's take a look at an example. Imagine we have an API, only one level for now, defined as:
+
+```haskell
+type Api =
+  "v1"
+    :> Header "traceparent" TraceParentHeader
+    :> Header "Authorization" AuthorizationHeader
+    :> "tickets"
+    :> NamedRoutes TicketApi
+
+data TicketApi mode = TicketApi
+  { createTicket
+      :: mode
+        :- ReqBody '[PlainText] CreateTicketRequest
+        :> Post '[PlainText] CreateTicketResponse
+  , getTicket
+      :: mode
+        :- Capture "ticketId" TicketId
+        :> Get '[PlainText] GetTicketResponse
+  }
+```
+
+We want to run our request handlers in a custom monad `App` using the ReaderT design pattern, which we define as:
+
+```haskell
+newtype App a = App
+  { unApp :: ReaderT AppEnv IO a
+  }
+```
+
+Our environment holds resources and context that most of our request handlers will need. In this example, the environment contains a [pool](https://hackage.haskell.org/package/resource-pool/docs/Data-Pool.html#t:Pool) of database connections, an [HTTP connection manager](https://hackage.haskell.org/package/http-client/docs/Network-HTTP-Client.html#t:Manager) used by our HTTP client, a `TraceId` for telemetry, and an authenticated `User` object:
+
+```haskell
+data AppEnv = AppEnv
+  { dbPool :: Pool Connection
+  , httpManager :: Manager
+  , traceId :: TraceId
+  , user :: User
+  }
+```
+
+We define a helper function `runAppServant` that we'll use later. Given an `AppEnv`, it runs an `App` action in Servant's `Handler` monad:
+
+```haskell
+runAppServant :: AppEnv -> App a -> Handler a
+runAppServant env action =
+  Servant.Handler . ExceptT . try $ runReaderT (unApp action) env
+```
+
+To create the server, we first wire up the request handlers in the `TicketApi` record defined earlier:
+
+```haskell
+createTicketHandler :: CreateTicketRequest -> App CreateTicketResponse
+createTicketHandler = -- ...
+
+getTicketHandler :: TicketId -> App GetTicketResponse
+getTicketHandler = -- ...
+
+ticketServer :: TicketApi (AsServerT App)
+ticketServer =
+  TicketApi
+    { createTicket = createTicketHandler
+    , getTicket = getTicketHandler
+    }
+```
+
+Now we can put it all together in the root `server`:
+
+```haskell
+server
+  :: Maybe TraceParentHeader
+  -> Maybe AuthorizationHeader
+  -> TicketApi (AsServerT Handler)
+server maybeTraceParentHeader maybeAuthHeader =
+  hoistServer (Proxy @(NamedRoutes TicketApi)) run ticketServer
+  where
+    run :: App a -> Handler a
+    run action = do
+      let appEnv = -- ...
+      runAppServant appEnv action
+```
+
+Since our request handlers are defined in the custom `App` monad, we use Servant's [`hoistServer`](https://hackage.haskell.org/package/servant-server/docs/Servant-Server.html#v:hoistServer). We pass it a `run` function that converts an action from `App a` to Servant's `Handler a`, also called "natural transformation" in the documentation. Inside `run`, we use the helper function `runAppServant` defined earlier, and we need to create an `AppEnv` to pass to it as an argument.
+
+Let's look at a first implementation of `run`:
+
+```haskell
+server
+  :: Maybe TraceParentHeader
+  -> Maybe AuthorizationHeader
+  -> TicketApi (AsServerT Handler)
+server maybeTraceParentHeader maybeAuthHeader =
+  hoistServer (Proxy @(NamedRoutes TicketApi)) run ticketServer
+  where
+    run :: App a -> Handler a
+    run action = do
+      -- Bad: These get recreated on every request
+      dbPool <- liftIO $ createDbPool "app:app@localhost:5432/app" 10
+      httpManager <- liftIO $ createHttpManager 20
+      -- Good: These need to be created on every request
+      traceId <- liftIO $ getOrGenerateTraceId maybeTraceParentHeader
+      user <- liftIO $ authenticateUser httpManager maybeAuthHeader
+      let appEnv =
+            AppEnv
+              { dbPool = dbPool
+              , httpManager = httpManager
+              , traceId = traceId
+              , user = user
+              }
+      runAppServant appEnv action
+```
+
+One thing that is not immediately apparent when calling `hoistServer`, at least it wasn't for me, is that the natural transformation function (i.e. `run` in our case) that you pass to it gets _called on every request_.
+
+The comments in the code snippet above gave it away, but server-wide resources such as database connection pools or HTTP connection managers are not something you want to recreate for every request. It is either wasteful or misses out on the optimizations brought by resource pools and keeping connections alive.
+
+On the other had, the `TraceId` and the `User` object are definitely something that is request-specific. This is emphasized by the fact that we have to use the request object to create them: HTTP headers in this case but it could also be URL path parameters.
+
+The subtle bug I saw in some codebase that I mentioned earlier was the HTTP connection `Manager` being recreated on every request because it was done in the transformation function passed to `hoistServer`. Not the end of the world, but definitely not how it is meant to be used:
+
+> If possible, you should share a single `Manager` between multiple threads and requests.
+>
+> https://hackage.haskell.org/package/http-client/docs/Network-HTTP-Client.html#t:Manager
+
+> Creating a new `Manager` is a relatively expensive operation, you are advised to share a single `Manager` between requests instead.
+>
+> https://hackage.haskell.org/package/http-client/docs/Network-HTTP-Client.html#v:newManager
+
+To convince ourselves, let's add logging to the different functions that create the resources and attributes that will build up into `AppEnv`. Then let's run the server implementation above and make two requests. Here is the log output in the terminal, with some comments added for clarity:
+
+```text
+# Server startup
+# (nothing)
+
+# Request 1
+[Info] Created new database connection pool of size 10 for app:app@localhost:5432/app
+[Info] Created new HTTP client manager with number of connections kept-alive per host of 20
+[Info] Using existing trace ID 208327fb-d2ca-473f-9e15-85ce49db7493
+[Info] Authenticated user with ID d42ed530-adba-41f0-99af-60bd6c476617
+
+# Request 2
+[Info] Created new database connection pool of size 10 for app:app@localhost:5432/app
+[Info] Created new HTTP client manager with number of connections kept-alive per host of 20
+[Info] Generating new trace ID 849a577b-7137-4738-9314-3bf9658d883d
+[Info] Authenticated user with ID d42ed530-adba-41f0-99af-60bd6c476617
+```
+
+We clearly see the database connection pool and the HTTP client manager being created on each request, which we don't want. Let's fix this with a second server implementation.
+
+Since we called our _request-specific_ environment `AppEnv`, let's define another record `AppServerEnv` that holds the _server-wide_ resources:
+
+```haskell
+data AppServerEnv = AppServerEnv
+  { dbPool :: Pool Connection
+  , httpManager :: Manager
+  }
+```
+
+Now instead of creating these resources shared across requests inside the `run` transformation function, we take it as a parameter:
+
+```haskell
+server
+  :: AppServerEnv
+  -> Maybe TraceParentHeader
+  -> Maybe AuthorizationHeader
+  -> TicketApi (AsServerT Handler)
+server AppServerEnv {dbPool, httpManager} maybeTraceParentHeader maybeAuthHeader =
+	hoistServer (Proxy @(NamedRoutes TicketApi)) run ticketServer
+  where
+    run :: App a -> Handler a
+    run action = do
+      -- Good: Only these get created on every request
+      traceId <- liftIO $ getOrGenerateTraceId maybeTraceParentHeader
+      user <- liftIO $ authenticateUser httpManager maybeAuthHeader
+      let appEnv =
+            AppEnv
+              { dbPool = dbPool
+              , httpManager = httpManager
+              , traceId = traceId
+              , user = user
+              }
+      runAppServant appEnv action
+```
+
+**Note**: Most functions in the source code of a web service run in the context of request. This is why I don't really consider this a first level of nesting of `AppServerEnv` into `AppEnv`, and called it "level 0". But if we have some functions that only require these server-wide resources and are not request-specific, we could define a custom monad `AppServer` to run them in.
+
+We now create `AppServerEnv` and its resources upon application startup, instead of inside the `hoistServer` transformation function:
+
+```haskell
+main :: IO ()
+main = do
+  -- Good: These get created only once, at server startup
+  dbPool <- createDbPool "app:app@localhost:5432/app" 10
+  httpManager <- createHttpManager 20
+  let port = 3000
+      appServerEnv =
+        AppServerEnv
+          { dbPool = dbPool
+          , httpManager = httpManager
+          }
+      waiApp = serve (Proxy @Api) (server appServerEnv)
+  Warp.run port waiApp
+```
+
+Let's run this second server implementation and make our two requests to make sure resource and environment creation is happening the way we want it now:
+
+```text
+# Server startup
+[Info] Created new database connection pool of size 10 for app:app@localhost:5432/app
+[Info] Created new HTTP client manager with number of connections kept-alive per host of 20
+
+# Request 1
+[Info] Using existing trace ID 208327fb-d2ca-473f-9e15-85ce49db7493
+[Info] Authenticated user with ID d42ed530-adba-41f0-99af-60bd6c476617
+
+# Request 2
+[Info] Generating new trace ID 849a577b-7137-4738-9314-3bf9658d883d
+[Info] Authenticated user with ID d42ed530-adba-41f0-99af-60bd6c476617
+```
+
+We see indeed that the database connection pool and HTTP client manager only get created once, instead of being recreated for each request.

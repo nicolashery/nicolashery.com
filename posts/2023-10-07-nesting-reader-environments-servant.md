@@ -148,7 +148,7 @@ The comments in the code snippet above gave it away, but server-wide resources s
 
 On the other had, the `TraceId` and the `User` object are definitely something that is request-specific. This is emphasized by the fact that we have to use the request object to create them: HTTP headers in this case but it could also be URL path parameters.
 
-The subtle bug I saw in some codebase that I mentioned earlier was the HTTP connection `Manager` being recreated on every request because it was done in the transformation function passed to `hoistServer`. Not the end of the world, but definitely not how it is meant to be used:
+The subtle bug I saw in a codebase that I mentioned earlier was the HTTP connection `Manager` being recreated on every request because it was done in the transformation function passed to `hoistServer`. Not the end of the world, but definitely not how it is meant to be used:
 
 > If possible, you should share a single `Manager` between multiple threads and requests.
 >
@@ -251,3 +251,50 @@ Let's run this second server implementation and make our two requests to make su
 ```
 
 We see indeed that the database connection pool and HTTP client manager only get created once, instead of being recreated for each request.
+
+If you'd like to read through the full and runnable examples for this section, you can do so in [this Gist](https://gist.github.com/nicolashery/4603a6976b02ef8e4f477e3e93160e46).
+
+## An example nested API
+
+Now that we've emphasized the difference between the server and request environments, and when to create them, let's focus on nesting and creating different _request environments_.
+
+We'll imagine that we're building an API for a ticket and issue tracker, similar to Jira, but of course greatly simplified for this example. The layout of the API looks like this (adapted from the [`layout`](https://hackage.haskell.org/package/servant-server/docs/Servant-Server.html#v:layout) helper function from Servant):
+
+```text
+/v1
+└─ Header "traceparent"
+   ├─ GET /health
+   ├─ GET /layout
+   |
+   └─ Header "Authorization"
+      ├─ GET /organizations
+      |
+      └─ /organizations/:organizationId
+         ├─ POST /projects
+         ├─ GET /projects/:projectId
+         |
+         └─ /projects/:projectId
+            ├─ POST /tickets
+            └─ GET /tickets/:ticketId
+```
+
+Here we have 4 levels of nesting. The handlers for each level will run in their own custom monad based on the ReaderT design pattern (ex: `AppTicket` for the last level) and will define their own environment (ex: `AppTicketEnv`) that also includes all of the context from the environments in the levels above it.
+
+In this way, each level of handlers creates a "sub-API" (ex: `TicketApi`). Everything needed to implement the handlers and that is not included in the definition of the sub-API itself comes from the environment of the monad the handlers run in.
+
+For example the `:ticketId` URL path parameter in the last endpoint is included in the `TicketAPI` definition, and allows us to retrieve the ticket. But if we need to check access control for the user for this particular project, then we'll use the `AppTicketEnv` environment which will have captured the `"Authorization"` header (giving us the user) and `:projectId` URL path parameter (giving us the project) from the API levels above it. 
+
+From top to bottom, or parent to child, the different levels in this example are as follows:
+
+- `App` (`ReaderT AppEnv IO`)
+  - Includes all server-wide context (`Logging` function and `Database` connection pool in this example)
+  - Captures the `"traceparent"` HTTP header and uses it to create an OpenTelemetry `Tracing` context (setting the active [span](https://opentelemetry.io/docs/concepts/signals/traces/#spans) in this example)
+- `AppAuthenticated` (`ReaderT AppAuthenticatedEnv IO`)
+  - Includes everything from the level above it
+  - Captures the `"Authorization"` HTTP header and uses it to authenticate the current user and create `Auth` context (containing the `UserId` in this example)
+- `AppProject` (`ReaderT AppProjectEnv IO`)
+  - Includes everything from the levels above it
+  - Captures the `:organizationId` URL path parameter and uses it to fetch the `Organization` object that the projects belong to
+- `AppTicket` (`ReaderT AppTicketEnv IO`)
+  - Includes everything from the levels above it
+  - Captures the `:projectId` URL path parameter and uses it to fetch the `Project` object that the tickets belong to

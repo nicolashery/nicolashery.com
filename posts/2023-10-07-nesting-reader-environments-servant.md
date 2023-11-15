@@ -76,7 +76,7 @@ We define a helper function `runAppServant` that we'll use later. Given an `AppE
 ```haskell
 runAppServant :: AppEnv -> App a -> Handler a
 runAppServant env action =
-  Servant.Handler . ExceptT . try $ runReaderT (unApp action) env
+  Handler . ExceptT . try $ runReaderT (unApp action) env
 ```
 
 To create the server, we first wire up the request handlers in the `TicketApi` record defined earlier:
@@ -102,7 +102,7 @@ Now we can put it all together in the root `server`:
 server
   :: Maybe TraceParentHeader
   -> Maybe AuthorizationHeader
-  -> TicketApi (AsServerT Handler)
+  -> Server (NamedRoutes TicketApi)
 server maybeTraceParentHeader maybeAuthHeader =
   hoistServer (Proxy @(NamedRoutes TicketApi)) run ticketServer
   where
@@ -120,7 +120,7 @@ Let's look at a first implementation of `run`:
 server
   :: Maybe TraceParentHeader
   -> Maybe AuthorizationHeader
-  -> TicketApi (AsServerT Handler)
+  -> Server (NamedRoutes TicketApi)
 server maybeTraceParentHeader maybeAuthHeader =
   hoistServer (Proxy @(NamedRoutes TicketApi)) run ticketServer
   where
@@ -195,7 +195,7 @@ server
   :: AppServerEnv
   -> Maybe TraceParentHeader
   -> Maybe AuthorizationHeader
-  -> TicketApi (AsServerT Handler)
+  -> Server (NamedRoutes TicketApi)
 server AppServerEnv {dbPool, httpManager} maybeTraceParentHeader maybeAuthHeader =
 	hoistServer (Proxy @(NamedRoutes TicketApi)) run ticketServer
   where
@@ -286,15 +286,259 @@ For example the `:ticketId` URL path parameter in the last endpoint is included 
 
 From top to bottom, or parent to child, the different levels in this example are as follows:
 
-- `App` (`ReaderT AppEnv IO`)
+- Level 1: `App` (`ReaderT AppEnv IO`)
   - Includes all server-wide context (`Logging` function and `Database` connection pool in this example)
   - Captures the `"traceparent"` HTTP header and uses it to create an OpenTelemetry `Tracing` context (setting the active [span](https://opentelemetry.io/docs/concepts/signals/traces/#spans) in this example)
-- `AppAuthenticated` (`ReaderT AppAuthenticatedEnv IO`)
+- Level 2: `AppAuthenticated` (`ReaderT AppAuthenticatedEnv IO`)
   - Includes everything from the level above it
   - Captures the `"Authorization"` HTTP header and uses it to authenticate the current user and create `Auth` context (containing the `UserId` in this example)
-- `AppProject` (`ReaderT AppProjectEnv IO`)
+- Level 3: `AppProject` (`ReaderT AppProjectEnv IO`)
   - Includes everything from the levels above it
   - Captures the `:organizationId` URL path parameter and uses it to fetch the `Organization` object that the projects belong to
-- `AppTicket` (`ReaderT AppTicketEnv IO`)
+- Level 4: `AppTicket` (`ReaderT AppTicketEnv IO`)
   - Includes everything from the levels above it
   - Captures the `:projectId` URL path parameter and uses it to fetch the `Project` object that the tickets belong to
+
+And here is what the first couple levels look like in Haskell, using Servant's `NamedRoutes` to declare each sub-API as a record:
+
+```haskell 
+type Api =
+  "v1"
+    :> Header "traceparent" TraceParentHeader
+    :> NamedRoutes RootApi
+
+-- Level 1: App
+data RootApi mode = RootApi
+  { health
+      :: mode
+        :- "health"
+        :> GetNoContent
+  , layout
+      :: mode
+        :- "layout"
+        :> Get '[PlainText] LayoutResponse
+  , authenticatedApi
+      :: mode
+        :- Header "Authorization" AuthorizationHeader
+        :> NamedRoutes AuthenticatedApi
+  }
+
+-- Level 2: AppAuthenticated
+data AuthenticatedApi mode = AuthenticatedApi
+  { listOrganizations
+      :: mode
+        :- "organizations"
+        :> Get '[PlainText] ListOrganizationsResponse
+  , projectApi
+      :: mode
+        :- "organizations"
+        :> Capture "organizationId" OrganizationId
+        :> "projects"
+        :> NamedRoutes ProjectApi
+  }
+
+-- Level 3: AppProject
+data ProjectApi mode = ProjectApi
+	{ -- ...
+	}
+```
+
+For the whole Servant API definition, see [`Api.hs`](https://gist.github.com/nicolashery/4dcf7003564c576d0d2f4872447c7b02#file-api-hs) of the Gist containing the example used in this post.
+
+## Nested ReaderT environments
+
+Most of the codebases I've seen run all of the request handlers in the same custom monad, for instance `App`. At the top level, we use Servant's [`hoistServer`](https://docs.servant.dev/en/stable/tutorial/Server.html#using-another-monad-for-your-handlers) to translate `App` back to a Servant `Handler` so we can run the server using [`serve`](https://hackage.haskell.org/package/servant-server/docs/Servant-Server.html#v:serve), as we saw in the first section of this article.
+
+That is perfectly fine for a lot of applications. But as the API becomes more complex and nested, we might notice one of two things. Either the `AppEnv` context contained in the `App` monad becomes rather big and holds attributes that are really only used by a subset of handlers and ignored by the rest. Or we find ourselves repeating a lot of the same logic in the handlers, such as authenticating a `User` or fetching the `Organization` that the resources belong to, etc.
+
+One way to approach this would be to define different environments and monads, for each of the sub-APIs, as described in the previous section. But how does one go about translating everything back to the `Handler` that Servant understands? We could certainly do it manually, by wrapping each handler individually, but that can be cumbersome.
+
+What wasn't immediately apparent to me at first, is that you can _make multiple calls_ to `hoistServer`. And although it is presented in the documentation as a utility to bring handlers running in a custom monad back to Servant's `Handler` , we can use it to translate a server from any arbitrary monad, say `AppAuthenticated`, to another arbitrary monad, say `App`.
+
+Let's take a look at an example. Say we created different custom monads (`App`, `AppAuthenticated`, `AppProject`, etc.) corresponding to each level of our API definition above. We then write a translation function for each monad to the level right above it, until we finally translate back to Servant's `Handler` monad:
+
+```haskell
+-- Level 1
+newtype App a = App
+  { unApp :: ReaderT AppEnv IO a
+  }
+  
+runApp :: AppEnv -> App a -> Handler a
+
+-- Level 2
+newtype AppAuthenticated a = AppAuthenticated
+  { unApp :: ReaderT AppAuthenticatedEnv IO a
+  }
+  
+runAppAuthenticated :: AppAuthenticatedEnv -> AppAuthenticated a -> App a
+
+-- Level 3
+newtype AppProject a = AppProject
+  { unApp :: ReaderT AppProjectEnv IO a
+  }
+  
+runAppProject :: AppProjectEnv -> AppProject a -> AppAuthenticated a
+
+-- etc.
+```
+
+Each sub-API from the definition has its own "sub-server", with the server's handlers running in the appropriate monad. For example:
+
+```haskell
+-- Level 1
+rootServer :: AppDeps -> ServerT (NamedRoutes RootApi) App
+rootServer deps =
+  RootApi
+    { health = healthHandler
+    , layout = layoutHandler
+    , authenticatedApi = -- ...
+    }
+    
+healthHandler :: App NoContent
+layoutHandler :: App Text
+
+-- Level 2
+authenticatedServer
+  :: Maybe AuthorizationHeader
+  -> ServerT (NamedRoutes AuthenticatedApi) AppAuthenticated
+authenticatedServer maybeAuthHeader =
+  AuthenticatedApi
+    { listOrganizations = listOrganizationsHandler
+    , projectApi = -- ...
+    }
+   
+listOrganizationsHandler :: AppAuthenticated ListOrganizationsResponse
+
+-- Level 3
+projectServer :: OrganizationId -> ServerT (NamedRoutes ProjectApi) AppProject
+projectServer organizationId =
+  ProjectApi
+    { createProject = createProjectHandler
+    , getProject = getProjectHandler
+    , ticketApi = -- ...
+    }
+
+createProjectHandler :: CreateProjectRequest -> AppProject CreateProjectResponse
+getProjectHandler :: ProjectId -> AppProject GetProjectResponse
+
+-- etc.
+```
+
+At the top level, we define the `server` that runs in Servant's `Handler`. We use `hoistServer` as we did in the beginning of the article to create the `AppEnv` and translate `rootServer` running in `App` to `server` running in `Handler`:
+
+```haskell
+server
+  :: AppDeps
+  -> Maybe TraceParentHeader
+  -> Server (NamedRoutes RootApi)
+server deps maybeTraceParentHeader =
+  hoistServer (Proxy @(NamedRoutes RootApi)) run (rootServer deps)
+  where
+    run :: App a -> Handler a
+    run action = do
+      activeSpan <- -- Use `maybeTraceParentHeader` to create
+      let appEnv =
+            AppEnv
+              { appLogger = depsLogger deps
+              , dbPool = depsDbPool deps
+              , tracer = depsTracer deps
+              , activeSpan = activeSpan
+              }
+      runApp appEnv action
+
+rootServer :: AppDeps -> ServerT (NamedRoutes RootApi) App
+rootServer = -- ...
+```
+
+**Note:** `AppDeps` contains any dependencies created at application startup such as database connection pools and loggers, i.e. the server-wide environment described earlier.
+
+Now for each level below, we can do something similar.  We use `hoistServer` again, to translate that level's monad into the level right above it. In the `run` function passed to `hoistServer`, we create the appropriate environment for that level, using information from the request such as URL parameters or headers and making necessary HTTP calls or database calls to populate the environment's attributes.
+
+For example, to go from `AppAuthenticated` to `App`:
+
+```haskell
+rootServer :: AppDeps -> ServerT (NamedRoutes RootApi) App
+rootServer deps =
+  RootApi
+    { health = healthHandler
+    , layout = layoutHandler
+    , authenticatedApi = authenticatedServer' deps
+    }
+
+authenticatedServer'
+  :: AppDeps
+  -> Maybe AuthorizationHeader
+  -> ServerT (NamedRoutes AuthenticatedApi) App
+authenticatedServer' deps maybeAuthHeader =
+  hoistServer (Proxy @(NamedRoutes AuthenticatedApi)) run (authenticatedServer maybeAuthHeader)
+  where
+    run :: AppAuthenticated a -> App a
+    run action = do
+    	appEnv <- ask
+    	userId <- -- Use `maybeAuthHeader` to authenticate user
+    	let appAuthenticatedEnv =
+    				AppAuthenticatedEnv
+              { appEnv = appEnv
+              , appOrganizationService = depsOrganizationService deps
+              , userId = userId
+              }
+      runAppAuthenticated appAuthenticatedEnv action
+        
+authenticatedServer
+  :: Maybe AuthorizationHeader
+  -> ServerT (NamedRoutes AuthenticatedApi) AppAuthenticated
+authenticatedServer = -- ...
+```
+
+**Note:** We used an intermediary `authenticatedServer'` for clarity and to keep the same pattern as the previous level.
+
+You can see in the snippet above how the `authenticatedServer`, running in `AppAuthenticated`, gets mounted in the `rootServer`, running in `App`. We again use `hoistServer`, just as we did to translate `rootServer` into a server running in `Handler` that Servant can understand.
+
+The main logic happens in the `run :: AppAuthenticated a -> App a` transformation function that is passed to `hoistServer`. In it, we need to construct an `AppAuthenticatedEnv` to pass to the `runAppAuthenticated` helper function.
+
+To do so, we first retrieve the `AppEnv` context from the `App` monad using `ask` from `ReaderT`, and embed it in the `AppAuthenticatedEnv`. This is how we nest the different ReaderT environments: each environment has an attribute that holds the environment from the one above it.
+
+Next, we extend the `AppAuthenticatedEnv` context by adding other attributes. For instance, we can use the `"Authorization"` header to authenticate and fetch the user's information, `userId` in the example above. This can be done with HTTP or database calls, or more generally other `IO` actions, since we are in the `App` monad and all of these custom monads are based on `ReaderT env IO`.
+
+Let's take a look at another example, going from `AppProject` to `AppAuthenticated`:
+
+```haskell
+authenticatedServer
+  :: Maybe AuthorizationHeader
+  -> ServerT (NamedRoutes AuthenticatedApi) AppAuthenticated
+authenticatedServer _ =
+  AuthenticatedApi
+    { listOrganizations = listOrganizationsHandler
+    , projectApi = projectServer'
+    }
+
+projectServer' :: OrganizationId -> ServerT (NamedRoutes ProjectApi) AppAuthenticated
+projectServer' organizationId =
+  hoistServer (Proxy @(NamedRoutes ProjectApi)) run (projectServer organizationId)
+  where
+    run :: AppProject a -> AppAuthenticated a
+    run action = do
+    	appAuthenticatedEnv <- ask
+    	projectOrganization <- -- Use `organizationId` to fetch organization object
+    	let appProjectEnv =
+    				AppProjectEnv
+              { appAuthenticatedEnv = appAuthenticatedEnv
+              , projectOrganization = projectOrganization
+              }
+      runAppProject appProjectEnv action
+
+projectServer :: OrganizationId -> ServerT (NamedRoutes ProjectApi) AppProject
+projectServer = -- ...
+```
+
+We again use `hoistServer` to embed the `projectServer` in the `authenticatedServer`. In the `run` transformation function for this level, we also grab the previous environment, `AppAuthenticatedEnv`, and nest it in the new environment, `AppProjectEnv`. We enhance the new environment, in this case by using the `organizationId` in the URL path parameters to fetch the organization object that the projects in the current request belong to.
+
+Now let's circle back and implement the translation helper functions for each custom monad that we've been using inside the `run` passed to `hoistServer`. Here are their signatures as a reminder:
+
+```haskell
+runApp :: AppEnv -> App a -> Handler a
+runAppAuthenticated :: AppAuthenticatedEnv -> AppAuthenticated a -> App a
+runAppProject :: AppProjectEnv -> AppProject a -> AppAuthenticated a
+-- etc.
+```
+

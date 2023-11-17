@@ -355,29 +355,51 @@ One way to approach this would be to define different environments and monads, f
 
 What wasn't immediately apparent to me at first, is that you can _make multiple calls_ to `hoistServer`. And although it is presented in the documentation as a utility to bring handlers running in a custom monad back to Servant's `Handler` , we can use it to translate a server from any arbitrary monad, say `AppAuthenticated`, to another arbitrary monad, say `App`.
 
-Let's take a look at an example. Say we created different custom monads (`App`, `AppAuthenticated`, `AppProject`, etc.) corresponding to each level of our API definition above. We then write a translation function for each monad to the level right above it, until we finally translate back to Servant's `Handler` monad:
+Let's take a look at an example. Say we created different custom monads based on the ReaderT design pattern (`App`, `AppAuthenticated`, `AppProject`, etc.) and corresponding to each level of our API definition above. Each monad has an associated environment, suffixed with `*Env`, that holds the environment from the level above it as well as any additional context as described in the nested API example above. We also have a translation function, prefixed with `run*`, for each monad to the level right above it, until we finally translate back to Servant's `Handler` monad. We'll look at the implementation of these translation functions later.
 
 ```haskell
 -- Level 1
 newtype App a = App
   { unApp :: ReaderT AppEnv IO a
   }
+
+data AppEnv = AppEnv
+  { appLogger :: LogFunc
+  , dbPool :: Pool Connection
+  , tracer :: Tracer
+  -- Above are server-wide dependencies, below are request-specific
+  , activeSpan :: IORef Span
+  }
   
 runApp :: AppEnv -> App a -> Handler a
+runApp = -- ...
 
 -- Level 2
 newtype AppAuthenticated a = AppAuthenticated
   { unApp :: ReaderT AppAuthenticatedEnv IO a
   }
-  
+
+data AppAuthenticatedEnv = AppAuthenticatedEnv
+  { appEnv :: AppEnv -- Environment from Level 1
+  , userId :: UserId
+  , appOrganizationService :: OrganizationService
+  }
+
 runAppAuthenticated :: AppAuthenticatedEnv -> AppAuthenticated a -> App a
+runAppAuthenticated = -- ...
 
 -- Level 3
 newtype AppProject a = AppProject
   { unApp :: ReaderT AppProjectEnv IO a
   }
-  
+
+data AppProjectEnv = AppProjectEnv
+  { appAuthenticatedEnv :: AppAuthenticatedEnv -- Environment from Level 2
+  , projectOrganization :: Organization
+  }
+
 runAppProject :: AppProjectEnv -> AppProject a -> AppAuthenticated a
+runAppProject = -- ...
 
 -- etc.
 ```
@@ -479,8 +501,8 @@ authenticatedServer' deps maybeAuthHeader =
     	let appAuthenticatedEnv =
     				AppAuthenticatedEnv
               { appEnv = appEnv
-              , appOrganizationService = depsOrganizationService deps
               , userId = userId
+              , appOrganizationService = depsOrganizationService deps
               }
       runAppAuthenticated appAuthenticatedEnv action
         
@@ -570,6 +592,7 @@ runAppProject appProjectEnv action =  do
   let mapEnv _appAuthenticatedEnv' = appProjectEnv
   AppAuthenticated $ withReaderT mapEnv (unAppProject action)
 
+-- For reference:
 withReaderT :: (r' -> r) -> ReaderT r m a -> ReaderT r' m a
 ```
 
@@ -630,3 +653,130 @@ runAppProject organizationId action = do
 
 If you'd like to see the full source code for this section, [`Server.hs`](https://gist.github.com/nicolashery/4dcf7003564c576d0d2f4872447c7b02#file-server-hs) in the Gist is a good place to start.
 
+## Implementing the request handlers
+
+Let's now look at how to use these different monads and nested environments, by implementing some request handlers. We'll go a couple levels down, and write the handler for the "create project" endpoint from level 3:
+
+```text
+POST /v1/organizations/:organizationId/projects
+```
+
+The handler will:
+
+- Create an new telemetry span, using the `tracer` and `activeSpan` from the `AppEnv` parent context
+- Grab the current `userId` from the `AppAuthenticatedEnv` parent context
+- Grab the current `projectOrganization` from its own `AppProjectEnv` context
+
+- Save a new project record in the database using the `dbPool` connection information from the `AppEnv` parent context
+
+- Log a message saying the project was created using the `appLogger` from the `AppEnv` parent context
+- Send a response most likely, but we'll skip over that part
+
+Since all the handler monads are newtypes over `ReaderT` and have a `MonadReader` derived instance, we can use [`asks`](https://hackage.haskell.org/package/mtl-2.3.1/docs/Control-Monad-Reader-Class.html#v:asks) along with the path through the nested environment records up to the specific context attribute that we need. Here is a first implementation:
+
+```haskell
+createProjectHandler :: CreateProjectRequest -> AppProject CreateProjectResponse
+createProjectHandler projectName = do
+  tracer <- asks (tracer . appEnv . appAuthenticatedEnv)
+  activeSpan <- asks (activeSpan . appEnv . appAuthenticatedEnv)
+  tracedWith tracer activeSpan "create_project" $ do
+    userId <- asks (userId . appAuthenticatedEnv)
+    organizationId <- asks (organizationId . projectOrganization)
+    dbPool <- asks (dbPool . appEnv . appAuthenticatedEnv)
+    _ <-
+      runDatabaseWith dbPool
+        $ query
+          "insert into projects (name, organization_id) values (?, ?) returning id"
+          (projectName, organizationId)
+    logFunc <- asks (appLogger . appEnv . appAuthenticatedEnv)
+    _ <-
+      flip runLoggingT logFunc
+        $ logInfo
+        $ "created project"
+        :# [ "user_id" .= userId
+           , "organization_id" .= organizationId
+           ]
+    -- ...
+```
+
+This works perfectly fine and we could stop here. However, there is a bit of repetitiveness with the selector functions passed to `asks`. I'd argue it has the advantage of being very clear and explicit. But it does get worse if you have a lot of nested environments. Indeed, if we look at the "create ticket" handler one level deeper:
+
+```haskell
+createTicketHandler :: CreateTicketRequest -> AppTicket CreateTicketResponse
+createTicketHandler ticketName = do
+  tracer <- asks (tracer . appEnv . appAuthenticatedEnv . appProjectEnv)
+  activeSpan <- asks (activeSpan . appEnv . appAuthenticatedEnv . appProjectEnv)
+  tracedWith tracer activeSpan "create_project" $ do
+    userId <- asks (userId . appAuthenticatedEnv . appProjectEnv)
+    organizationId <- asks (organizationId . projectOrganization . appProjectEnv)
+    projectId <- asks (projectId . ticketProject)
+    dbPool <- asks (dbPool . appEnv . appAuthenticatedEnv . appProjectEnv)
+    -- ...
+```
+
+On thing we can do to improve the code is define small helper functions that can be re-used across handlers of the same level of nesting. For the `AppProject` level, we can define:
+
+```haskell
+traced :: Text -> AppProject a -> AppProject a
+traced spanName action = do
+  tracer <- asks (tracer . appEnv . appAuthenticatedEnv)
+  activeSpan <- asks (activeSpan . appEnv . appAuthenticatedEnv)
+  tracedWith tracer activeSpan spanName action
+
+getUserId :: AppProject UserId
+getUserId = asks (userId . appAuthenticatedEnv)
+
+getProjectOrganization :: AppProject Organization
+getProjectOrganization = asks projectOrganization
+
+runDatabase :: Database a -> AppProject a
+runDatabase action = do
+  dbPool <- asks (dbPool . appEnv . appAuthenticatedEnv)
+  runDatabaseWith dbPool action
+
+runLogging :: LoggingT AppProject () -> AppProject ()
+runLogging action = do
+  logFunc <- asks (appLogger . appEnv . appAuthenticatedEnv)
+  runLoggingT action logFunc
+```
+
+Our "create project" handler from before now becomes:
+
+```haskell
+createProjectHandler :: CreateProjectRequest -> AppProject CreateProjectResponse
+createProjectHandler projectName = traced "create_project" $ do
+  userId <- getUserId
+  organizationId <- organizationId <$> getProjectOrganization
+  _ <-
+    runDatabase
+      $ query
+        "insert into projects (name, organization_id) values (?, ?) returning id"
+        (projectName, organizationId)
+  runLogging
+    $ logInfo
+    $ "created project"
+    :# [ "user_id" .= userId
+       , "organization_id" .= organizationId
+       ]
+  -- ...
+```
+
+**Note:** As a bonus, since I'm using [monad-logger-aeson](https://hackage.haskell.org/package/monad-logger-aeson) for logging, we could get rid of `runLogging` by implementing a `MonadLogger` instance for `AppProject` and all the other request handler monads. For details on how to do that, please refer to [this post](https://nicolashery.com/monadlogger-without-loggingt/).
+
+Some of these helper functions remind me of the "embed" pattern described by Matt Parsons in his book [Production Haskell](https://leanpub.com/production-haskell):
+
+> The general pattern that I recommend is to *embed* things into your App
+> type.
+>
+> ```
+> runSql :: Database a -> App a
+> runRedis :: Redis a -> App a
+> ```
+>
+> **Matt Parsons, Production Haskell (2023), "5.5 Embed, don’t Stack"**
+
+The drawback of this approach, is that we need to re-implement the helper functions for each monad level that needs them (`App`, `AppAuthenticated`, `AppProject`, etc.).
+
+Also, if we change the structure of the nested environments a little causing the path in `asks` to change, we would potentially need to refactor a lot of code (although type system would guide us through the whole process).
+
+We'll see in the next section one way to address these issues.

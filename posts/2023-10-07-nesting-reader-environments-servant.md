@@ -533,7 +533,7 @@ projectServer = -- ...
 
 We again use `hoistServer` to embed the `projectServer` in the `authenticatedServer`. In the `run` transformation function for this level, we also grab the previous environment, `AppAuthenticatedEnv`, and nest it in the new environment, `AppProjectEnv`. We enhance the new environment, in this case by using the `organizationId` in the URL path parameters to fetch the organization object that the projects in the current request belong to.
 
-Now let's circle back and implement the translation helper functions for each custom monad that we've been using inside the `run` passed to `hoistServer`. Here are their signatures as a reminder:
+Now let's circle back and implement the translation helper functions for each custom monad that we've been using inside the `run` function passed to `hoistServer`. Here are their signatures as a reminder:
 
 ```haskell
 runApp :: AppEnv -> App a -> Handler a
@@ -541,4 +541,92 @@ runAppAuthenticated :: AppAuthenticatedEnv -> AppAuthenticated a -> App a
 runAppProject :: AppProjectEnv -> AppProject a -> AppAuthenticated a
 -- etc.
 ```
+
+The top-level `runApp` is the one we've seen earlier which gets us to a Servant `Handler`, and for which there are already examples and explanations (for instance [here](https://www.parsonsmatt.org/2017/06/21/exceptional_servant_handling.html)):
+
+```haskell
+runApp :: AppEnv -> App a -> Handler a
+runApp env action =
+  Handler . ExceptT . try $ runReaderT (unApp action) env
+```
+
+Let's take one of the sub-API transformation function, for instance `runAppProject`. Since both `AppProject` and `AppAuthenticated` are `ReaderT env IO` monads, one way to get from one to the other is by unwrapping `AppProject` with `runReaderT` an reconstructing `AppAuthenticated` with `ReaderT`:
+
+```haskell
+runAppProject :: AppProjectEnv -> AppProject a -> AppAuthenticated a
+runAppProject appProjectEnv action =
+  AppAuthenticated
+    . ReaderT
+    $ \_appAuthenticatedEnv -> runReaderT (unAppProject action) appProjectEnv
+```
+
+We're really only going from one `ReaderT` to another, and translating the environment of the target monad (`AppAuthenticatedEnv`) into the environment of the source monad (`AppProjectEnv`).
+
+It turns out [`withReaderT`](https://hackage.haskell.org/package/transformers/docs/Control-Monad-Trans-Reader.html#v:withReaderT) does exactly that. So we can simplify a bit and write:
+
+```haskell
+runAppProject :: AppProjectEnv -> AppProject a -> AppAuthenticated a
+runAppProject appProjectEnv action =  do
+  let mapEnv _appAuthenticatedEnv' = appProjectEnv
+  AppAuthenticated $ withReaderT mapEnv (unAppProject action)
+
+withReaderT :: (r' -> r) -> ReaderT r m a -> ReaderT r' m a
+```
+
+In our case the environment transformation function `mapEnv :: r' -> r` is just replacing the environment altogether. But since all our sub-API environments have their parent's environment embedded in them, we might be able to use `withReaderT` more effectively. Let's start by in-lining `runAppProject` in the `projectServer'` where it was used:
+
+```haskell
+projectServer' :: OrganizationId -> ServerT (NamedRoutes ProjectApi) AppAuthenticated
+projectServer' organizationId =
+  hoistServer (Proxy @(NamedRoutes ProjectApi)) run (projectServer organizationId)
+  where
+    run :: AppProject a -> AppAuthenticated a
+    run action = do
+    	appAuthenticatedEnv <- ask
+    	projectOrganization <- fetchOrganization organizationId
+    	let appProjectEnv =
+    				AppProjectEnv
+              { appAuthenticatedEnv = appAuthenticatedEnv
+              , projectOrganization = projectOrganization
+              }
+          mapEnv _appAuthenticatedEnv' = appProjectEnv
+      AppAuthenticated $ withReaderT mapEnv (unAppProject action)
+```
+
+We see that we can simplify `run` and remove the `ask` for `appAuthenticatedEnv` since `withReaderT` passes it to the `mapEnv` function:
+
+```haskell
+run :: AppProject a -> AppAuthenticated a
+run action = do
+  projectOrganization <- fetchOrganization organizationId
+  let mapEnv appAuthenticatedEnv =
+        AppProjectEnv
+          { appAuthenticatedEnv = appAuthenticatedEnv
+          , projectOrganization = projectOrganization
+          }
+  AppAuthenticated $ withReaderT mapEnv (unAppProject action)
+```
+
+Finally, since most of the work of going from an `AppProject` to an `AppAuthenticated` is building the `AppProjectEnv`, we can encapsulate all of that and re-introduce the `runAppProject` function, this time passing it all it needs to build the `AppProjectEnv` (in our case, the `OrganizationId`):
+
+```haskell
+projectServer' :: OrganizationId -> ServerT (NamedRoutes ProjectApi) AppAuthenticated
+projectServer' organizationId =
+  hoistServer
+    (Proxy @(NamedRoutes ProjectApi))
+    (runAppProject organizationId)
+    (projectServer organizationId)
+
+runAppProject :: OrganizationId -> AppProject a -> AppAuthenticated a
+runAppProject organizationId action = do
+  projectOrganization <- fetchOrganization organizationId
+  let mapEnv appAuthenticatedEnv =
+        AppProjectEnv
+          { appAuthenticatedEnv = appAuthenticatedEnv
+          , projectOrganization = projectOrganization
+          }
+  AppAuthenticated $ withReaderT mapEnv (unAppProject action)
+```
+
+If you'd like to see the full source code for this section, [`Server.hs`](https://gist.github.com/nicolashery/4dcf7003564c576d0d2f4872447c7b02#file-server-hs) in the Gist is a good place to start.
 

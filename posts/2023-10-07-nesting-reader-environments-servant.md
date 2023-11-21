@@ -761,8 +761,6 @@ createProjectHandler projectName = traced "create_project" $ do
   -- ...
 ```
 
-**Note:** As a bonus, since I'm using [monad-logger-aeson](https://hackage.haskell.org/package/monad-logger-aeson) for logging, we could get rid of `runLogging` by implementing a `MonadLogger` instance for `AppProject` and all the other request handler monads. For details on how to do that, please refer to [this post](https://nicolashery.com/monadlogger-without-loggingt/).
-
 Some of these helper functions remind me of the "embed" pattern described by Matt Parsons in his book [Production Haskell](https://leanpub.com/production-haskell):
 
 > The general pattern that I recommend is to *embed* things into your App
@@ -780,3 +778,163 @@ The drawback of this approach, is that we need to re-implement the helper functi
 Also, if we change the structure of the nested environments a little causing the path in `asks` to change, we would potentially need to refactor a lot of code (although type system would guide us through the whole process).
 
 We'll see in the next section one way to address these issues.
+
+**Note:** As a bonus, since I'm using [monad-logger-aeson](https://hackage.haskell.org/package/monad-logger-aeson) for logging, we could already get rid of `runLogging` by implementing a `MonadLogger` instance for `AppProject` and all the other request handler monads. For details on how to do that, please refer to [this post](https://nicolashery.com/monadlogger-without-loggingt/).
+
+## The Has type class pattern
+
+For functionality that is re-used across different levels of the nested API (ex: `traced`, `getUserId`, `runDatabase`, etc.), instead of hard-coding to a specific monad and environment (ex: `App`, `AppAuthenticated`, etc.), we could introduce `Has*` type classes.
+
+Similar to the "ReaderT" design pattern, the "Has type class" pattern seems to be another popular pattern. For what it is worth, it is a the recommended approach taken by the `rio` library (see the ["`Has` type classes"](https://www.fpcomplete.com/haskell/library/rio/) section of the tutorial).
+
+What does it look like for our example? Let's take the tracing functionality with the `traced` function, a good example of re-use since all of our handlers call it. We'll first wrap everything the function needs from the environment, the tracer and the active span in this case, in a single record `TracingEnv`. Then we'll define the `HasTracing` type class to retrieve this tracing context:
+
+```haskell
+data TracingEnv = TracingEnv
+  { tracer :: Tracer
+  , activeSpan :: IORef Span
+  }
+
+class HasTracing env where
+  getTracing :: env -> TracingEnv
+```
+
+To generalize, we'll use these `Has*` type classes in combination with the [`MonadReader`](https://hackage.haskell.org/package/mtl/docs/Control-Monad-Reader-Class.html) type class. All of our custom monads are `ReaderT env IO` and can automatically derive `MonadReader`.
+
+So the concrete implementation of `traced` we wrote earlier for `AppProject`:
+
+```haskell
+traced :: Text -> AppProject a -> AppProject a
+traced spanName action = do
+  tracer <- asks (tracer . appEnv . appAuthenticatedEnv)
+  activeSpan <- asks (activeSpan . appEnv . appAuthenticatedEnv)
+  tracedWith tracer activeSpan spanName action
+```
+
+Can now be generalized to:
+
+```haskell
+traced :: (MonadReader env m, HasTracing env, MonadIO m) => Text -> m a -> m a
+traced spanName action = do
+	tracer <- tracer <$> asks getTracing
+  activeSpan <- activeSpan <$> asks getTracing
+  tracedWith tracer activeSpan spanName action
+```
+
+The `Has*` type classes and the helper functions using them can be moved to their own module, [`Tracing.hs`](https://gist.github.com/nicolashery/4dcf7003564c576d0d2f4872447c7b02#file-tracing-hs) in this case. This module can be used by request handlers regardless from all levels of the nested API, regardless of the monad they run in as long as the monad's environment defines an instance of `HasTracing`.
+
+As a reminder, `AppProject` was defined as:
+
+```haskell
+newtype AppProject a = AppProject
+  { unApp :: ReaderT AppProjectEnv IO a
+  }
+
+data AppProjectEnv = AppProjectEnv
+  { appAuthenticatedEnv :: AppAuthenticatedEnv
+  , projectOrganization :: Organization
+  }
+```
+
+So for the environment of `AppProject`, we can define the `HasTracing` instance as:
+
+```haskell
+instance HasTracing AppProjectEnv where
+  getTracing = tracingEnv . appEnv . appAuthenticatedEnv
+```
+
+**Note:** The `AppEnv` record now wraps the tracer and active span in the `TracingEnv` record we introduced.
+
+We can go a little further. Since we'll probably define a `HasTracing` instance for all levels (`App`, `AppAuthenticated`, etc.) and since our environments are nested, we can use `getTracing` from the level right above ours:
+
+```haskell
+instance HasTracing AppProjectEnv where
+  getTracing = getTracing . appAuthenticatedEnv
+```
+
+The `AppTicket` environment instance is similar:
+
+```haskell
+instance HasTracing AppTicketEnv where
+  getTracing = getTracing . appProjectEnv
+```
+
+For authentication information, we can similarly create a re-usable [`Authentication.hs`](https://gist.github.com/nicolashery/4dcf7003564c576d0d2f4872447c7b02#file-authentication-hs) module and introduce a `HasAuth` type class:
+
+```haskell
+data AuthEnv = AuthEnv
+  { userId :: UserId
+  }
+
+class HasAuth env where
+  getAuth :: env -> AuthEnv
+```
+
+An replace the concrete helper function we defined in the previous section:
+
+```haskell
+getUserId :: AppProject UserId
+getUserId = asks (userId . appAuthenticatedEnv)
+```
+
+With a generalized version using the `HasAuth` type class:
+
+```haskell
+getUserId :: (MonadReader env m, HasAuth env) => m UserId
+getUserId = userId <$> asks getAuth
+```
+
+We then define instances for the environments of each handler monads:
+
+```haskell
+instance HasAuth AppAuthenticatedEnv where
+  getAuth = authEnv
+
+instance HasAuth AppProjectEnv where
+  getAuth = getAuth . appAuthenticatedEnv
+
+instance HasAuth AppTicketEnv where
+  getAuth = getAuth . appProjectEnv
+```
+
+The request handler implementations stay the same as in the previous section, except now we are importing the shared helper functions that leverage the `Has*` type classes, instead of using concrete implementations for each level of the nested API:
+
+```haskell
+import Authentication (getUserId)
+import Database (query, runDatabase)
+import Tracing (traced)
+
+createProjectHandler :: CreateProjectRequest -> AppProject CreateProjectResponse
+createProjectHandler projectName = traced "create_project" $ do
+  userId <- getUserId
+  organizationId <- organizationId <$> getProjectOrganization
+  _ <-
+    runDatabase
+      $ query
+        "insert into projects (name, organization_id) values (?, ?) returning id"
+        (projectName, organizationId)
+  logInfo
+    $ "created project"
+    :# [ "user_id" .= userId
+       , "organization_id" .= organizationId
+       ]
+  -- ...
+```
+
+Note that using this "Has type class" pattern is optional and staying with the implementation from the previous section is perfectly fine and could work for a lot of projects and teams.
+
+One may call out that defining all the `Has*` type classes and providing instances does feel like a bit of boilerplate still. I think [the `rio` tutorial](https://www.fpcomplete.com/haskell/library/rio/) has some good arguments on why that is acceptable:
+
+> - The boilerplate here, amortized across a project, is really small
+> - This is the “safe” kind of boilerplate: the compiler will almost always prevent you from making a mistake
+> - The code above is obvious and easy to follow
+> - The code above compiles really quickly
+
+I'll also add that, like any generalization at the type level, the compiler errors might be a little more difficult to parse, notably for less experienced Haskell developers:
+
+> We can write a type class `HasAppEnvironment` and require that instead of a concrete `AppEnvironment` [...]
+> I generally recommend against this approach. Type class polymorphism is a great way to introduce confusing type errors into a project.
+>
+> **Matt Parsons, Production Haskell (2023), "5.3 AppEnvironment"**
+
+Although in practice and on the codebases I've worked on, I didn't see or hear of any notable issues with this particular pattern.

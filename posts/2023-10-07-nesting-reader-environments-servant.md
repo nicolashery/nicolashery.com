@@ -1,34 +1,34 @@
 ---
 layout: post
 title: Nesting APIs and ReaderT environments with Servant
-description: In this post we look at how to structure nested APIs using Servant, with each child API building upon the context of its parent using ReaderT environments.
+description: In this post, we look at how to structure nested APIs using Servant so that each child API builds upon the context of its parent using ReaderT environments.
 ---
 
 [[TOC]]
 
 ## Introduction
 
-Many of the HTTP APIs I've worked on tended to have a nested nature. At each level of the API, request handlers often shared some amount of context that they all required to get their transactions done. And the deeper one went in the API's nested structure, the more this context grew. 
+Many of the HTTP APIs I've worked on tended to have a nested nature. At each level or sub-API, the request handlers often shared some amount of context. And the deeper you went into the API's nested structure, the more this context grew.
 
-For example, at the top level of the API, all routes could have access to the `TraceId` for telemetry. Going to the next level down, there could be a split between non-authenticated (aka "public") and authenticated (aka "private") routes, each defining a sub-API. All authenticated routes would have access to a `User` object. Inside the authenticated API, there could be another nested API with routes such as `/projects/:projectId` and `/projects/:projectId/tickets`. All of these routes could have access to a `Project` object.
+For example, at the top level of the API, all routes could have access to the `TraceId` for telemetry. Going one level down, we could split the API between non-authenticated (aka "public") routes and authenticated (aka "private") routes. Each branch of this split defines a sub-API. All authenticated routes would have access to a `User` object. Inside the authenticated API, another nested API could have routes such as `/projects/:projectId` and `/projects/:projectId/tickets`. The routes of this last sub-API could have access to a `Project` object.
 
-As we can see, what goes in the shared context at each level of the API is often coming from the HTTP **headers** and the **URL** path items. For instance, a `traceparent` HTTP header would help us create a `TraceId`, an `Authorization` header would allow us to load a `User`, and the `:projectId` in the URL path would be used to fetch the `Project`.
+Notice that what goes into the shared context at each API level often comes from the HTTP **headers** and the **URL** path items. In the example above, the `traceparent` HTTP header would help us create a `TraceId`, the `Authorization` header would allow us to load a `User`, and the `:projectId` in the URL path would be used to fetch the `Project`.
 
-We'll also see that this context often contains **server dependencies** such as database connection pools, HTTP clients, loggers, etc. As these do not depend on the request they can, and should, be created ahead of time.
+This context also typically contains **server dependencies** such as database connection pools, HTTP clients, loggers, etc. As these resources do not depend on the request, they can and should be created ahead of time.
 
-[Servant](https://docs.servant.dev/) with its type-level DSL, although at the cost of a bit of a learning curve, gives us powerful tools to build [nested APIs](https://docs.servant.dev/en/stable/tutorial/Server.html#nested-apis) in a type-safe manner. Newer versions of the web framework also introduced [NamedRoutes](https://www.tweag.io/blog/2022-02-24-named-routes/). They allow us to structure APIs using records and make it easier to work with more complex route hierarchies.
+[Servant](https://docs.servant.dev/) gives us powerful tools to build [nested APIs](https://docs.servant.dev/en/stable/tutorial/Server.html#nested-apis) in a type-safe manner with its type-level DSL, even if at the cost of a bit of a learning curve. Newer versions of the web framework also introduce [NamedRoutes](https://www.tweag.io/blog/2022-02-24-named-routes/). This feature allows us to structure APIs using records, making it easier to work with more complex route hierarchies.
 
-The ["ReaderT design pattern"](https://www.fpcomplete.com/blog/readert-design-pattern/) gives us tools to define a shared context across request handlers. While it is not the only way to do so, it is popular and approachable enough that we'll use it in this post's example. The context described earlier is referred to as the Reader or ReaderT's "**environment**". Nesting environments allows us to create different levels of context.
+The ["ReaderT design pattern"](https://www.fpcomplete.com/blog/readert-design-pattern/) gives us tools to define a shared context that request handlers can easily access. While it is not the only way to do so, it is popular and approachable enough that we'll use it in this post. The Reader or ReaderT's "**environment**" represents the request context within this pattern. By nesting environments, we can create different levels of context.
 
-In this article, I'll assume familiarity with Servant and the ReaderT design pattern. We'll also be using Servant's [`hoistServer`](https://docs.servant.dev/en/stable/tutorial/Server.html#using-another-monad-for-your-handlers) to run our custom ReaderT monad in Servant as well as nest our environments. If you need a refresher, the Servant example in [this post](https://nicolashery.com/comparing-scotty-yesod-servant/) could be a good item to review.
+In this article, I'll assume some familiarity with Servant and the ReaderT design pattern. We'll also use Servant's [`hoistServer`](https://docs.servant.dev/en/stable/tutorial/Server.html#using-another-monad-for-your-handlers) to run our custom ReaderT monad and nest our environments. If you need a refresher, the Servant example in [this post](https://nicolashery.com/comparing-scotty-yesod-servant/) could be a good item to review.
 
 ## Server vs. request environment
 
-Before we dive into building nested APIs and defining different levels of context for each sub-API, let's take a look at what we can think of "level 0": the _server_ context or environment as it is called in the ReaderT pattern. We'll treat it separately from all other levels of context, which are _request_ environments.
+Before we dive into building nested APIs and defining different levels of context for each of them, let's focus on "level 0": the *server* environment. All other levels of context will be *request* environments.
 
-What makes the server environment different is that it is created only once, upon application startup, and the resources or attributes that it holds will be _shared across requests_. The request environments on the other hand are _recreated on every request_, and the attributes that it holds are scoped to that particular request.
+The server environment is different because it is created only once upon application startup, and the resources or attributes it holds will be *shared across requests*. On the other hand, a request environment is *recreated on every request*, and the attributes that it holds are scoped to that particular request.
 
-This is an important distinction and was actually the source of a small bug on a codebase I worked on.
+This is an important distinction and was actually the source of a minor bug on a codebase I worked on.
 
 Let's take a look at an example. Imagine we have an API, only one level for now, defined as:
 
@@ -52,7 +52,7 @@ data TicketApi mode = TicketApi
   }
 ```
 
-We want to run our request handlers in a custom monad `App` using the ReaderT design pattern, which we define as:
+We want to run our request handlers in a custom monad `App` that follows the ReaderT design pattern:
 
 ```haskell
 newtype App a = App
@@ -60,7 +60,7 @@ newtype App a = App
   }
 ```
 
-Our environment holds resources and context that most of our request handlers will need. In this example, the environment contains a [pool](https://hackage.haskell.org/package/resource-pool/docs/Data-Pool.html#t:Pool) of database connections, an [HTTP connection manager](https://hackage.haskell.org/package/http-client/docs/Network-HTTP-Client.html#t:Manager) used by our HTTP client, a `TraceId` for telemetry, and an authenticated `User` object:
+Our environment holds the resources and context that most of our request handlers will need. In this example, the environment contains a [pool](https://hackage.haskell.org/package/resource-pool/docs/Data-Pool.html#t:Pool) of database connections, an [HTTP connection manager](https://hackage.haskell.org/package/http-client/docs/Network-HTTP-Client.html#t:Manager) used by our HTTP client, a `TraceId` for telemetry, and an authenticated `User` object:
 
 ```haskell
 data AppEnv = AppEnv
@@ -71,7 +71,7 @@ data AppEnv = AppEnv
   }
 ```
 
-We define a helper function `runAppServant` that we'll use later. Given an `AppEnv`, it runs an `App` action in Servant's `Handler` monad:
+We define a helper function, `runAppServant`, that we'll use later. Given an `AppEnv`, it runs an `App` action in Servant's `Handler` monad:
 
 ```haskell
 runAppServant :: AppEnv -> App a -> Handler a
@@ -88,7 +88,7 @@ createTicketHandler = -- ...
 getTicketHandler :: TicketId -> App GetTicketResponse
 getTicketHandler = -- ...
 
-ticketServer :: TicketApi (AsServerT App)
+ticketServer :: ServerT (NamedRoutes TicketApi) App
 ticketServer =
   TicketApi
     { createTicket = createTicketHandler
@@ -112,7 +112,7 @@ server maybeTraceParentHeader maybeAuthHeader =
       runAppServant appEnv action
 ```
 
-Since our request handlers are defined in the custom `App` monad, we use Servant's [`hoistServer`](https://hackage.haskell.org/package/servant-server/docs/Servant-Server.html#v:hoistServer). We pass it a `run` function that converts an action from `App a` to Servant's `Handler a`, also called "natural transformation" in the documentation. Inside `run`, we use the helper function `runAppServant` defined earlier, and we need to create an `AppEnv` to pass to it as an argument.
+Since our request handlers are defined in the custom `App` monad, we use Servant's [`hoistServer`](https://hackage.haskell.org/package/servant-server/docs/Servant-Server.html#v:hoistServer). We pass it a `run` function that converts an action from `App` to Servant's `Handler`. This function is also called "natural transformation" in the documentation. Inside `run`, we use the helper function `runAppServant` that we defined earlier. We must also create an `AppEnv` to pass to `runAppServant` as an argument.
 
 Let's look at a first implementation of `run`:
 
@@ -142,13 +142,13 @@ server maybeTraceParentHeader maybeAuthHeader =
       runAppServant appEnv action
 ```
 
-One thing that is not immediately apparent when calling `hoistServer`, at least it wasn't for me, is that the natural transformation function (i.e. `run` in our case) that you pass to it gets _called on every request_.
+One thing that is not immediately apparent when calling `hoistServer`, at least not for me at first, is that the natural transformation function you give it (i.e. `run` in our case) gets _called on every request_.
 
 The comments in the code snippet above gave it away, but server-wide resources such as database connection pools or HTTP connection managers are not something you want to recreate for every request. It is either wasteful or misses out on the optimizations brought by resource pools and keeping connections alive.
 
-On the other had, the `TraceId` and the `User` object are definitely something that is request-specific. This is emphasized by the fact that we have to use the request object to create them: HTTP headers in this case but it could also be URL path parameters.
+On the other hand, the `TraceId` and the `User` object are definitely request-specific. Indeed, we need to use the request object to create them. In this case, we used the request's HTTP headers, but it could also have been the URL path parameters.
 
-The subtle bug I saw in a codebase that I mentioned earlier was the HTTP connection `Manager` being recreated on every request because it was done in the transformation function passed to `hoistServer`. Not the end of the world, but definitely not how it is meant to be used:
+The minor bug mentioned earlier was an HTTP connection `Manager` being recreated on every request because it was done in the transformation function passed to `hoistServer`. Nothing critical, but definitely not how the HTTP connection `Manager` is meant to be used:
 
 > If possible, you should share a single `Manager` between multiple threads and requests.
 >
@@ -158,7 +158,7 @@ The subtle bug I saw in a codebase that I mentioned earlier was the HTTP connect
 >
 > https://hackage.haskell.org/package/http-client/docs/Network-HTTP-Client.html#v:newManager
 
-To convince ourselves, let's add logging to the different functions that create the resources and attributes that will build up into `AppEnv`. Then let's run the server implementation above and make two requests. Here is the log output in the terminal, with some comments added for clarity:
+In our example, let's add logging to the functions that create the resources and attributes for `AppEnv`. Then, we'll run the first server implementation above and make two requests. Here is the log output in the terminal, with some comments added for clarity:
 
 ```text
 # Server startup
@@ -177,9 +177,9 @@ To convince ourselves, let's add logging to the different functions that create 
 [Info] Authenticated user with ID d42ed530-adba-41f0-99af-60bd6c476617
 ```
 
-We clearly see the database connection pool and the HTTP client manager being created on each request, which we don't want. Let's fix this with a second server implementation.
+Indeed, we see that the database connection pool and the HTTP client manager are being recreated for each request, which we don't want. Let's fix this with a second server implementation.
 
-Since we called our _request-specific_ environment `AppEnv`, let's define another record `AppServerEnv` that holds the _server-wide_ resources:
+Since we called our _request-specific_ environment `AppEnv`, let's define another record `AppServerEnv` that holds the _server-wide_ resources shared across requests:
 
 ```haskell
 data AppServerEnv = AppServerEnv
@@ -188,7 +188,7 @@ data AppServerEnv = AppServerEnv
   }
 ```
 
-Now instead of creating these resources shared across requests inside the `run` transformation function, we take it as a parameter:
+Now, instead of creating these server resources inside the `run` transformation function, we add them as a parameter to the `server` function:
 
 ```haskell
 server
@@ -214,9 +214,9 @@ server AppServerEnv {dbPool, httpManager} maybeTraceParentHeader maybeAuthHeader
       runAppServant appEnv action
 ```
 
-**Note**: Most functions in the source code of a web service run in the context of request. This is why I don't really consider this a first level of nesting of `AppServerEnv` into `AppEnv`, and called it "level 0". But if we have some functions that only require these server-wide resources and are not request-specific, we could define a custom monad `AppServer` to run them in.
+**Note**: Most functions in a web service run in the context of a request. This is why I haven't defined a monad for the server context `AppServerEnv` and called it "level 0". But if we have some functions that only require these server-wide resources and are not request-specific, we could define a custom monad `AppServer` to run them in.
 
-We now create `AppServerEnv` and its resources upon application startup, instead of inside the `hoistServer` transformation function:
+Now we create `AppServerEnv` and its resources upon application startup instead of inside the `hoistServer` transformation function:
 
 ```haskell
 main :: IO ()
@@ -234,7 +234,7 @@ main = do
   Warp.run port waiApp
 ```
 
-Let's run this second server implementation and make our two requests to make sure resource and environment creation is happening the way we want it now:
+Let's run this second server implementation and make our two requests to make sure resource and environment creation is now happening the way we want it:
 
 ```text
 # Server startup
@@ -250,9 +250,9 @@ Let's run this second server implementation and make our two requests to make su
 [Info] Authenticated user with ID d42ed530-adba-41f0-99af-60bd6c476617
 ```
 
-We see indeed that the database connection pool and HTTP client manager only get created once, instead of being recreated for each request.
+Indeed, we see that the database connection pool and the HTTP client manager only get created once instead of being recreated for each request.
 
-If you'd like to read through the full and runnable examples for this section, you can do so in [this gist](https://gist.github.com/nicolashery/4603a6976b02ef8e4f477e3e93160e46).
+If you'd like to read through this section's complete and runnable examples, you can do so in [this gist](https://gist.github.com/nicolashery/4603a6976b02ef8e4f477e3e93160e46).
 
 ## An example nested API
 

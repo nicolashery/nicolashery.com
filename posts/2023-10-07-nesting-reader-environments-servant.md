@@ -256,9 +256,9 @@ If you'd like to read through this section's complete and runnable examples, you
 
 ## An example nested API
 
-Now that we've emphasized the difference between the server and request environments, and when to create them, let's focus on nesting and creating different _request environments_.
+Now that we've underlined the difference between the server and request environments, and when to create them, let's focus on nesting and creating different _request environments_.
 
-We'll imagine that we're building an API for a ticket and issue tracker, similar to Jira, but of course greatly simplified for this example. The layout of the API looks like this (adapted from the [`layout`](https://hackage.haskell.org/package/servant-server/docs/Servant-Server.html#v:layout) helper function from Servant):
+We'll imagine we're building an API for a ticket and issue tracker, similar to Jira but greatly simplified for this example. The layout of the API looks like this (adapted from the [layout](https://hackage.haskell.org/package/servant-server/docs/Servant-Server.html#v:layout) helper function from Servant):
 
 ```text
 /v1
@@ -278,11 +278,11 @@ We'll imagine that we're building an API for a ticket and issue tracker, similar
             └─ GET /tickets/:ticketId
 ```
 
-Here we have 4 levels of nesting. The handlers for each level will run in their own custom monad based on the ReaderT design pattern (ex: `AppTicket` for the last level) and will define their own environment (ex: `AppTicketEnv`) that also includes all of the context from the environments in the levels above it.
+Here, we have four levels of nesting. The handlers for each level will run in their own custom monad based on the ReaderT design pattern (ex: `AppTicket` for the last level) and with their own environment (ex: `AppTicketEnv`). These environments will also include all of the contexts from the levels above them.
 
-In this way, each level of handlers creates a "sub-API" (ex: `TicketApi`). Everything needed to implement the handlers and that is not included in the definition of the sub-API itself comes from the environment of the monad the handlers run in.
+In this way, each level of handlers creates a "sub-API" (ex: `TicketApi`). Everything needed to implement the handlers of a sub-API comes from the environment of the monad they run in or the definition of the sub-API itself.
 
-For example the `:ticketId` URL path parameter in the last endpoint is included in the `TicketAPI` definition, and allows us to retrieve the ticket. But if we need to check access control for the user for this particular project, then we'll use the `AppTicketEnv` environment which will have captured the `"Authorization"` header (giving us the user) and `:projectId` URL path parameter (giving us the project) from the API levels above it. 
+For example, the `:ticketId` URL path parameter in the last endpoint is included in the `TicketAPI` definition and allows us to retrieve the ticket. But suppose we need to check user access control for this ticket's project. In that case, we'll use the `AppTicketEnv` environment. It contains the information we need, captured by the API levels above this one: the user from the `"Authorization"` header and the project from the `:projectId` URL path parameter.
 
 From top to bottom, or parent to child, the different levels in this example are as follows:
 
@@ -291,7 +291,7 @@ From top to bottom, or parent to child, the different levels in this example are
   - Captures the `"traceparent"` HTTP header and uses it to create an OpenTelemetry `Tracing` context (setting the active [span](https://opentelemetry.io/docs/concepts/signals/traces/#spans) in this example)
 - Level 2: `AppAuthenticated` (`ReaderT AppAuthenticatedEnv IO`)
   - Includes everything from the level above it
-  - Captures the `"Authorization"` HTTP header and uses it to authenticate the current user and create `Auth` context (containing the `UserId` in this example)
+  - Captures the `"Authorization"` HTTP header and uses it to authenticate the current user and create an `Auth` context (containing the `UserId` in this example)
 - Level 3: `AppProject` (`ReaderT AppProjectEnv IO`)
   - Includes everything from the levels above it
   - Captures the `:organizationId` URL path parameter and uses it to fetch the `Organization` object that the projects belong to
@@ -299,7 +299,7 @@ From top to bottom, or parent to child, the different levels in this example are
   - Includes everything from the levels above it
   - Captures the `:projectId` URL path parameter and uses it to fetch the `Project` object that the tickets belong to
 
-And here is what the first couple levels look like in Haskell, using Servant's `NamedRoutes` to declare each sub-API as a record:
+And here is what the first couple of levels look like in Haskell, using Servant's `NamedRoutes` to declare each sub-API as a record:
 
 ```haskell 
 type Api =
@@ -343,7 +343,7 @@ data ProjectApi mode = ProjectApi
 	}
 ```
 
-For the whole Servant API definition, see [`Api.hs`](https://gist.github.com/nicolashery/4dcf7003564c576d0d2f4872447c7b02#file-api-hs) of the gist containing the example used in this post.
+For the full Servant API definition, see [`Api.hs`](https://gist.github.com/nicolashery/4dcf7003564c576d0d2f4872447c7b02#file-api-hs) of the gist containing the example used in this post.
 
 ## Nested ReaderT environments
 

@@ -347,15 +347,15 @@ For the full Servant API definition, see [`Api.hs`](https://gist.github.com/nico
 
 ## Nested ReaderT environments
 
-Most of the codebases I've seen run all of the request handlers in the same custom monad, for instance `App`. At the top level, we use Servant's [`hoistServer`](https://docs.servant.dev/en/stable/tutorial/Server.html#using-another-monad-for-your-handlers) to translate `App` back to a Servant `Handler` so we can run the server using [`serve`](https://hackage.haskell.org/package/servant-server/docs/Servant-Server.html#v:serve), as we saw in the first section of this article.
+Most codebases I've seen run all request handlers in the same custom monad, for example `App`. At the top level, Servant's [`hoistServer`](https://docs.servant.dev/en/stable/tutorial/Server.html#using-another-monad-for-your-handlers) is used to translate `App` back to a Servant `Handler` and run the server with [`serve`](https://hackage.haskell.org/package/servant-server/docs/Servant-Server.html#v:serve), as we saw in the first section of this article.
 
-That is perfectly fine for a lot of applications. But as the API becomes more complex and nested, we might notice one of two things. Either the `AppEnv` context contained in the `App` monad becomes rather big and holds attributes that are really only used by a subset of handlers and ignored by the rest. Or we find ourselves repeating a lot of the same logic in the handlers, such as authenticating a `User` or fetching the `Organization` that the resources belong to, etc.
+That is perfectly fine for a lot of applications. But as the API becomes more complex and nested, we might notice one of two things. Either the `AppEnv` context contained in the `App` monad becomes big and holds attributes only used by a subset of handlers and ignored by the rest. Or we find ourselves repeating many of the same logic in the handlers, such as authenticating the `User` or fetching the `Organization` that the resources belong to.
 
-One way to approach this would be to define different environments and monads, for each of the sub-APIs, as described in the previous section. But how does one go about translating everything back to the `Handler` that Servant understands? We could certainly do it manually, by wrapping each handler individually, but that can be cumbersome.
+One way to approach this can be to define different environments and monads for each sub-API, as described in the previous section. But how do we translate everything back to the `Handler` that Servant understands? We could do it manually by wrapping each handler individually, but that can quickly become cumbersome.
 
-What wasn't immediately apparent to me at first, is that you can _make multiple calls_ to `hoistServer`. And although it is presented in the documentation as a utility to bring handlers running in a custom monad back to Servant's `Handler` , we can use it to translate a server from any arbitrary monad, say `AppAuthenticated`, to another arbitrary monad, say `App`.
+What wasn't apparent to me initially was that you can *make multiple calls* to `hoistServer`. Moreover, the documentation presents `hoistServer` as a utility to bring handlers running in a custom monad such as `App` back to Servant's `Handler`. But we can use it to translate a server from any arbitrary monad (ex: `AppAuthenticated`) to another arbitrary monad (ex: `App`).
 
-Let's take a look at an example. Say we created different custom monads based on the ReaderT design pattern (`App`, `AppAuthenticated`, `AppProject`, etc.) and corresponding to each level of our API definition above. Each monad has an associated environment, suffixed with `*Env`, that holds the environment from the level above it as well as any additional context as described in the nested API example above. We also have a translation function, prefixed with `run*`, for each monad to the level right above it, until we finally translate back to Servant's `Handler` monad. We'll look at the implementation of these translation functions later.
+Let's take a look at an example. We create different custom monads based on the ReaderT design pattern (`App`, `AppAuthenticated`, `AppProject`, etc.) corresponding to each level of our API definition above. Each monad has an associated environment, suffixed with `*Env`, that holds the environment from the level above it and any additional context specific to that level. We also have a transformation function, prefixed with `run*`, that translates each monad to the monad from the level above it. The topmost function finally translates back to Servant's `Handler`. We'll look at the implementation of these transformation functions later.
 
 ```haskell
 -- Level 1
@@ -404,7 +404,7 @@ runAppProject = -- ...
 -- etc.
 ```
 
-Each sub-API from the definition has its own "sub-server", with the server's handlers running in the appropriate monad. For example:
+Each sub-API from the definition has its own "sub-server", and that sub-server's handlers run in the appropriate monad. For example:
 
 ```haskell
 -- Level 1
@@ -446,7 +446,7 @@ getProjectHandler :: ProjectId -> AppProject GetProjectResponse
 -- etc.
 ```
 
-At the top level, we define the `server` that runs in Servant's `Handler`. We use `hoistServer` as we did in the beginning of the article to create the `AppEnv` and translate `rootServer` running in `App` to `server` running in `Handler`:
+At the top level, we define the `server` that runs in Servant's `Handler`. We use `hoistServer` as we did at the beginning of the article to create the `AppEnv` and translate `rootServer` running in `App` to `server` running in `Handler`:
 
 ```haskell
 server
@@ -472,9 +472,9 @@ rootServer :: AppDeps -> ServerT (NamedRoutes RootApi) App
 rootServer = -- ...
 ```
 
-**Note:** `AppDeps` contains any dependencies created at application startup such as database connection pools and loggers, i.e. the server-wide environment described earlier.
+**Note:** `AppDeps` contains any dependencies created at application startup, such as database connection pools and loggers, i.e. the server-wide environment described earlier.
 
-Now for each level below, we can do something similar.  We use `hoistServer` again, to translate that level's monad into the level right above it. In the `run` function passed to `hoistServer`, we create the appropriate environment for that level, using information from the request such as URL parameters or headers and making necessary HTTP calls or database calls to populate the environment's attributes.
+For each of the other levels, we can do something similar. We use `hoistServer` again to translate one level's monad to the monad from the level above it. In the `run` function passed to `hoistServer`, we create the environment for the lower level. We use information from the request, such as URL parameters or headers, and make necessary HTTP or database calls to populate the environment's attributes.
 
 For example, to go from `AppAuthenticated` to `App`:
 
@@ -512,15 +512,15 @@ authenticatedServer
 authenticatedServer = -- ...
 ```
 
-**Note:** We used an intermediary `authenticatedServer'` for clarity and to keep the same pattern as the previous level.
+**Note:** We introduce an intermediary `authenticatedServer'` for clarity and to keep the code similar to the previous level.
 
-You can see in the snippet above how the `authenticatedServer`, running in `AppAuthenticated`, gets mounted in the `rootServer`, running in `App`. We again use `hoistServer`, just as we did to translate `rootServer` into a server running in `Handler` that Servant can understand.
+You can see in the snippet above how `authenticatedServer`, running in `AppAuthenticated`, is mounted in `rootServer`, running in `App`. We use `hoistServer` a second time like we did the first time to translate `rootServer` from `App` to `Handler`.
 
-The main logic happens in the `run :: AppAuthenticated a -> App a` transformation function that is passed to `hoistServer`. In it, we need to construct an `AppAuthenticatedEnv` to pass to the `runAppAuthenticated` helper function.
+The main logic happens in the `run :: AppAuthenticated a -> App a` transformation function passed to `hoistServer`. In this function, we must construct an `AppAuthenticatedEnv` to pass to `runAppAuthenticated`.
 
-To do so, we first retrieve the `AppEnv` context from the `App` monad using `ask` from `ReaderT`, and embed it in the `AppAuthenticatedEnv`. This is how we nest the different ReaderT environments: each environment has an attribute that holds the environment from the one above it.
+To do so, we first retrieve the `AppEnv` context from the `App` monad using `ask` from `ReaderT`, and embed it in `AppAuthenticatedEnv`. This is how we nest the different `ReaderT` environments: each environment has an attribute that holds the environment from the level above it.
 
-Next, we extend the `AppAuthenticatedEnv` context by adding other attributes. For instance, we can use the `"Authorization"` header to authenticate and fetch the user's information, `userId` in the example above. This can be done with HTTP or database calls, or more generally other `IO` actions, since we are in the `App` monad and all of these custom monads are based on `ReaderT env IO`.
+Next, we extend the `AppAuthenticatedEnv` context by adding other attributes. For instance, we can use the `"Authorization"` header to authenticate and fetch the user's information, such as the `userId`. We can do this with HTTP calls, database queries, or other `IO` actions since these custom monads are based on `ReaderT env IO`.
 
 Let's take a look at another example, going from `AppProject` to `AppAuthenticated`:
 
@@ -553,9 +553,9 @@ projectServer :: OrganizationId -> ServerT (NamedRoutes ProjectApi) AppProject
 projectServer = -- ...
 ```
 
-We again use `hoistServer` to embed the `projectServer` in the `authenticatedServer`. In the `run` transformation function for this level, we also grab the previous environment, `AppAuthenticatedEnv`, and nest it in the new environment, `AppProjectEnv`. We enhance the new environment, in this case by using the `organizationId` in the URL path parameters to fetch the organization object that the projects in the current request belong to.
+We use `hoistServer` a third time to embed `projectServer` in `authenticatedServer`. In the `run` transformation function for this level, we also grab the previous environment, `AppAuthenticatedEnv`, and nest it in the new environment, `AppProjectEnv`. This time, we enhance the new environment by using the `organizationId` in the URL path parameters to fetch the organization that owns the projects in the current request.
 
-Now let's circle back and implement the translation helper functions for each custom monad that we've been using inside the `run` function passed to `hoistServer`. Here are their signatures as a reminder:
+Now let's go back and implement the helper functions for each custom monad that we've been using inside the `run` functions passed to `hoistServer`. As a reminder, here are their signatures:
 
 ```haskell
 runApp :: AppEnv -> App a -> Handler a
@@ -564,7 +564,7 @@ runAppProject :: AppProjectEnv -> AppProject a -> AppAuthenticated a
 -- etc.
 ```
 
-The top-level `runApp` is the one we've seen earlier which gets us to a Servant `Handler`, and for which there are already examples and explanations (for instance [here](https://www.parsonsmatt.org/2017/06/21/exceptional_servant_handling.html)):
+The top-level `runApp` gets us to a Servant `Handler`, as we've seen earlier. There are already existing examples and explanations that break it down, such as [this article](https://www.parsonsmatt.org/2017/06/21/exceptional_servant_handling.html). Here is the implementation:
 
 ```haskell
 runApp :: AppEnv -> App a -> Handler a
@@ -572,7 +572,7 @@ runApp env action =
   Handler . ExceptT . try $ runReaderT (unApp action) env
 ```
 
-Let's take one of the sub-API transformation function, for instance `runAppProject`. Since both `AppProject` and `AppAuthenticated` are `ReaderT env IO` monads, one way to get from one to the other is by unwrapping `AppProject` with `runReaderT` an reconstructing `AppAuthenticated` with `ReaderT`:
+Let's take one of the sub-API transformation functions, for instance `runAppProject`. Since both `AppProject` and `AppAuthenticated` are `ReaderT env IO` monads, one way to get from one to the other is by unwrapping `AppProject` with `runReaderT` and reconstructing `AppAuthenticated` with `ReaderT`:
 
 ```haskell
 runAppProject :: AppProjectEnv -> AppProject a -> AppAuthenticated a
@@ -582,9 +582,9 @@ runAppProject appProjectEnv action =
     $ \_appAuthenticatedEnv -> runReaderT (unAppProject action) appProjectEnv
 ```
 
-We're really only going from one `ReaderT` to another, and translating the environment of the target monad (`AppAuthenticatedEnv`) into the environment of the source monad (`AppProjectEnv`).
+We're only going from one `ReaderT` to another and translating the target monad's environment (`AppAuthenticatedEnv`) into the source monad environment (`AppProjectEnv`).
 
-It turns out [`withReaderT`](https://hackage.haskell.org/package/transformers/docs/Control-Monad-Trans-Reader.html#v:withReaderT) does exactly that. So we can simplify a bit and write:
+It turns out [`withReaderT`](https://hackage.haskell.org/package/transformers/docs/Control-Monad-Trans-Reader.html#v:withReaderT) does exactly that. So we can simplify a little and write:
 
 ```haskell
 runAppProject :: AppProjectEnv -> AppProject a -> AppAuthenticated a
@@ -596,7 +596,7 @@ runAppProject appProjectEnv action =  do
 withReaderT :: (r' -> r) -> ReaderT r m a -> ReaderT r' m a
 ```
 
-In our case the environment transformation function `mapEnv :: r' -> r` is just replacing the environment altogether. But since all our sub-API environments have their parent's environment embedded in them, we might be able to use `withReaderT` more effectively. Let's start by in-lining `runAppProject` in the `projectServer'` where it was used:
+In our case, the environment transformation function `mapEnv :: r' -> r` replaces the environment altogether. But since all our sub-API environments have their parent's environment embedded in them, we might be able to use `withReaderT` more effectively. Let's start by in-lining `runAppProject` in `projectServer'` where it was used:
 
 ```haskell
 projectServer' :: OrganizationId -> ServerT (NamedRoutes ProjectApi) AppAuthenticated
@@ -616,7 +616,7 @@ projectServer' organizationId =
       AppAuthenticated $ withReaderT mapEnv (unAppProject action)
 ```
 
-We see that we can simplify `run` and remove the `ask` for `appAuthenticatedEnv` since `withReaderT` passes it to the `mapEnv` function:
+We can simplify `run` and remove the `ask` for `appAuthenticatedEnv` since `withReaderT` passes it to the `mapEnv` function:
 
 ```haskell
 run :: AppProject a -> AppAuthenticated a
@@ -630,7 +630,7 @@ run action = do
   AppAuthenticated $ withReaderT mapEnv (unAppProject action)
 ```
 
-Finally, since most of the work of going from an `AppProject` to an `AppAuthenticated` is building the `AppProjectEnv`, we can encapsulate all of that and re-introduce the `runAppProject` function, this time passing it all it needs to build the `AppProjectEnv` (in our case, the `OrganizationId`):
+Finally, since most of the work of going from an `AppProject` to an `AppAuthenticated` is building the `AppProjectEnv`, we can encapsulate all that and re-introduce the `runAppProject` function. The parameters of `runAppProject` provide it with everything it needs to build `AppProjectEnv`, in this particular case the `OrganizationId`:
 
 ```haskell
 projectServer' :: OrganizationId -> ServerT (NamedRoutes ProjectApi) AppAuthenticated
@@ -651,7 +651,7 @@ runAppProject organizationId action = do
   AppAuthenticated $ withReaderT mapEnv (unAppProject action)
 ```
 
-If you'd like to see the full source code for this section, [`Server.hs`](https://gist.github.com/nicolashery/4dcf7003564c576d0d2f4872447c7b02#file-server-hs) in the gist is a good place to start.
+If you'd like to see the complete source code for this section, [`Server.hs`](https://gist.github.com/nicolashery/4dcf7003564c576d0d2f4872447c7b02#file-server-hs) in the gist is a good place to start.
 
 ## Implementing the request handlers
 

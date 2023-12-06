@@ -655,24 +655,22 @@ If you'd like to see the complete source code for this section, [`Server.hs`](ht
 
 ## Implementing the request handlers
 
-Let's now look at how to use these different monads and nested environments, by implementing some request handlers. We'll go a couple levels down, and write the handler for the "create project" endpoint from level 3:
+Let's now look at using these different monads and nested environments by implementing the request handlers. As an example, we'll write the handler for the "create project" endpoint from level 3:
 
 ```text
 POST /v1/organizations/:organizationId/projects
 ```
 
-The handler will:
+This handler will:
 
-- Create an new telemetry span, using the `tracer` and `activeSpan` from the `AppEnv` parent context
+- Create a new telemetry span using the `tracer` and `activeSpan` from the `AppEnv` parent context
 - Grab the current `userId` from the `AppAuthenticatedEnv` parent context
-- Grab the current `projectOrganization` from its own `AppProjectEnv` context
-
+- Grab the current `projectOrganization` from the `AppProjectEnv` handler context
 - Save a new project record in the database using the `dbPool` connection information from the `AppEnv` parent context
+- Log a message using the `appLogger` from the `AppEnv` parent context
+- Send a response, but we'll skip that part for this example
 
-- Log a message saying the project was created using the `appLogger` from the `AppEnv` parent context
-- Send a response most likely, but we'll skip over that part
-
-Since all the handler monads are newtypes over `ReaderT` and have a `MonadReader` derived instance, we can use [`asks`](https://hackage.haskell.org/package/mtl-2.3.1/docs/Control-Monad-Reader-Class.html#v:asks) along with the path through the nested environment records up to the specific context attribute that we need. Here is a first implementation:
+Since all the handler monads are newtypes over `ReaderT` and have a `MonadReader` derived instance, we can use [`asks`](https://hackage.haskell.org/package/mtl-2.3.1/docs/Control-Monad-Reader-Class.html#v:asks) with the path through the nested environment records up to the specific context attribute we need. Here is a first implementation:
 
 ```haskell
 createProjectHandler :: CreateProjectRequest -> AppProject CreateProjectResponse
@@ -699,7 +697,7 @@ createProjectHandler projectName = do
     -- ...
 ```
 
-This works perfectly fine and we could stop here. However, there is a bit of repetitiveness with the selector functions passed to `asks`. I'd argue it has the advantage of being very clear and explicit. But it does get worse if you have a lot of nested environments. Indeed, if we look at the "create ticket" handler one level deeper:
+This implementation works perfectly fine, and we could stop here. However, the selector functions passed to `asks` have a bit of repetitiveness. They do have the advantage of being very clear and explicit. But it will get worse if we have a lot of nested environments. Indeed, if we look at the "create ticket" handler one level deeper:
 
 ```haskell
 createTicketHandler :: CreateTicketRequest -> AppTicket CreateTicketResponse
@@ -714,7 +712,7 @@ createTicketHandler ticketName = do
     -- ...
 ```
 
-On thing we can do to improve the code is define small helper functions that can be re-used across handlers of the same level of nesting. For the `AppProject` level, we can define:
+To improve the code, we can create small helper functions to reuse across handlers of the same level. For the `AppProject` level, we can define:
 
 ```haskell
 traced :: Text -> AppProject a -> AppProject a
@@ -740,7 +738,7 @@ runLogging action = do
   runLoggingT action logFunc
 ```
 
-Our "create project" handler from before now becomes:
+Our "create project" handler now becomes:
 
 ```haskell
 createProjectHandler :: CreateProjectRequest -> AppProject CreateProjectResponse
@@ -773,13 +771,13 @@ Some of these helper functions remind me of the "embed" pattern described by Mat
 >
 > **Matt Parsons, Production Haskell (2023), "5.5 Embed, don’t Stack"**
 
-The drawback of this approach, is that we need to re-implement the helper functions for each monad level that needs them (`App`, `AppAuthenticated`, `AppProject`, etc.).
+The drawback of this approach is that we need to re-implement the helper functions for each monad and level that needs them (`App`, `AppAuthenticated`, `AppProject`, etc.).
 
-Also, if we change the structure of the nested environments a little causing the path in `asks` to change, we would potentially need to refactor a lot of code (although type system would guide us through the whole process).
+Additionally, if we change the structure of the nested environments and cause the path in `asks` to change, we might need to refactor a lot of code (although the type system would guide us through the whole process).
 
-We'll see in the next section one way to address these issues.
+In the next section, we'll see one way to address these issues.
 
-**Note:** As a bonus, since I'm using [monad-logger-aeson](https://hackage.haskell.org/package/monad-logger-aeson) for logging, we could already get rid of `runLogging` by implementing a `MonadLogger` instance for `AppProject` and all the other request handler monads. For details on how to do that, please refer to [this post](https://nicolashery.com/monadlogger-without-loggingt/).
+**Note:** Since we're using [monad-logger-aeson](https://hackage.haskell.org/package/monad-logger-aeson) for logging, we can already remove `runLogging` by implementing a `MonadLogger` instance for `AppProject` and all the other request handler monads. For details on how to do that, please refer to [this post](https://nicolashery.com/monadlogger-without-loggingt/).
 
 ## The Has type class pattern
 

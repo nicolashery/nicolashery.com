@@ -142,7 +142,7 @@ server maybeTraceParentHeader maybeAuthHeader =
       runAppServant appEnv action
 ```
 
-One thing that is not immediately apparent when calling `hoistServer`, at least not for me at first, is that the natural transformation function you give it (i.e. `run` in our case) gets _called on every request_.
+One thing that is not immediately apparent when calling `hoistServer`, at least not for me at first, is that the natural transformation function you give it (`run` in our case) gets _called on every request_.
 
 The comments in the code snippet above gave it away, but server-wide resources such as database connection pools or HTTP connection managers are not something you want to recreate for every request. It is either wasteful or misses out on the optimizations brought by resource pools and keeping connections alive.
 
@@ -472,7 +472,7 @@ rootServer :: AppDeps -> ServerT (NamedRoutes RootApi) App
 rootServer = -- ...
 ```
 
-**Note:** `AppDeps` contains any dependencies created at application startup, such as database connection pools and loggers, i.e. the server-wide environment described earlier.
+**Note:** `AppDeps` contains any dependencies created at application startup, such as database connection pools and loggers. It is the server-wide environment we described earlier.
 
 For each of the other levels, we can do something similar. We use `hoistServer` again to translate one level's monad to the monad from the level above it. In the `run` function passed to `hoistServer`, we create the environment for the lower level. We use information from the request, such as URL parameters or headers, and make necessary HTTP or database calls to populate the environment's attributes.
 
@@ -781,11 +781,11 @@ In the next section, we'll see one way to address these issues.
 
 ## The Has type class pattern
 
-For functionality that is re-used across different levels of the nested API (ex: `traced`, `getUserId`, `runDatabase`, etc.), instead of hard-coding to a specific monad and environment (ex: `App`, `AppAuthenticated`, etc.), we could introduce `Has*` type classes.
+For functionality reused across different levels of the nested API (ex: `traced`, `getUserId`, `runDatabase`, etc.), instead of hard-coding to a specific monad and environment (ex: `App`, `AppAuthenticated`, etc.), we can generalize and introduce `Has*` type classes.
 
-Similar to the "ReaderT" design pattern, the "Has type class" pattern seems to be another popular pattern. For what it is worth, it is a the recommended approach taken by the `rio` library (see the ["`Has` type classes"](https://www.fpcomplete.com/haskell/library/rio/) section of the tutorial).
+Similar to the "ReaderT" design pattern we've been using, the "Has type class" pattern seems popular. It is also recommended by the `rio` library (see the ["`Has` type classes"](https://www.fpcomplete.com/haskell/library/rio/) section of the tutorial).
 
-What does it look like for our example? Let's take the tracing functionality with the `traced` function, a good example of re-use since all of our handlers call it. We'll first wrap everything the function needs from the environment, the tracer and the active span in this case, in a single record `TracingEnv`. Then we'll define the `HasTracing` type class to retrieve this tracing context:
+What does it look like in our example? Let's take the tracing functionality with the `traced` function, a good example of reuse since all our handlers call it. First, we wrap in a single record `TracingEnv` everything the function needs from the environment: the tracer and the active span. Then, we define the `HasTracing` type class to retrieve this tracing context:
 
 ```haskell
 data TracingEnv = TracingEnv
@@ -797,11 +797,11 @@ class HasTracing env where
   getTracing :: env -> TracingEnv
 ```
 
-**Note:** The `Has` type class pattern is sometimes used in combination with [lenses](https://www.fpcomplete.com/haskell/tutorial/lens/), notably by the `rio` library and documentation. I do not use them here because they add another concept to learn and I find the type errors can be more difficult to work with. But all of these examples would work perfectly fine with them.
+**Note:** The `Has` type class pattern is sometimes used in combination with [lenses](https://www.fpcomplete.com/haskell/tutorial/lens/), notably by the `rio` library and documentation. I do not use them here because they add another concept to learn, and the type errors can be challenging to understand. But all of these examples would work perfectly fine with lenses as well.
 
-To generalize, we'll use these `Has*` type classes in combination with the [`MonadReader`](https://hackage.haskell.org/package/mtl/docs/Control-Monad-Reader-Class.html) type class. All of our custom monads are `ReaderT env IO` and can automatically derive `MonadReader`.
+To generalize, we'll use these `Has*` type classes in combination with the [`MonadReader`](https://hackage.haskell.org/package/mtl/docs/Control-Monad-Reader-Class.html) type class. Our custom monads are based on `ReaderT env IO` and can automatically derive `MonadReader`.
 
-So the concrete implementation of `traced` we wrote earlier for `AppProject`:
+This was the concrete implementation of `traced` we wrote earlier for `AppProject`:
 
 ```haskell
 traced :: Text -> AppProject a -> AppProject a
@@ -811,7 +811,7 @@ traced spanName action = do
   tracedWith tracer activeSpan spanName action
 ```
 
-Can now be generalized to:
+We can now generalize it to:
 
 ```haskell
 traced :: (MonadReader env m, HasTracing env, MonadIO m) => Text -> m a -> m a
@@ -821,9 +821,9 @@ traced spanName action = do
   tracedWith tracer activeSpan spanName action
 ```
 
-The `Has*` type classes and the helper functions using them can be moved to their own module, [`Tracing.hs`](https://gist.github.com/nicolashery/4dcf7003564c576d0d2f4872447c7b02#file-tracing-hs) in this case. This module can be used by request handlers regardless from all levels of the nested API, regardless of the monad they run in as long as the monad's environment defines an instance of `HasTracing`.
+Each `Has*` type class and their helper functions can be moved to their own module, in this case [`Tracing.hs`](https://gist.github.com/nicolashery/4dcf7003564c576d0d2f4872447c7b02#file-tracing-hs). This module can be used by request handlers from all levels of the nested API, regardless of the monad they run in, as long as the monad's environment defines an instance of `HasTracing`.
 
-As a reminder, `AppProject` was defined as:
+For example, we defined the `AppProject` monad as:
 
 ```haskell
 newtype AppProject a = AppProject
@@ -836,7 +836,7 @@ data AppProjectEnv = AppProjectEnv
   }
 ```
 
-So for the environment of `AppProject`, we can define the `HasTracing` instance as:
+For the environment of `AppProject`, we can define the `HasTracing` instance as:
 
 ```haskell
 instance HasTracing AppProjectEnv where
@@ -845,7 +845,7 @@ instance HasTracing AppProjectEnv where
 
 **Note:** The `AppEnv` record now wraps the tracer and active span in the `TracingEnv` record we introduced.
 
-We can go a little further. Since we'll probably define a `HasTracing` instance for all levels (`App`, `AppAuthenticated`, etc.) and since our environments are nested, we can use `getTracing` from the level right above ours:
+We can go a little further. Since we'll probably define a `HasTracing` instance for all levels (`AppEnv`, `AppAuthenticatedEnv`, etc.), and since our environments are nested, we can use `getTracing` from the instance of the level above:
 
 ```haskell
 instance HasTracing AppProjectEnv where
@@ -859,7 +859,7 @@ instance HasTracing AppTicketEnv where
   getTracing = getTracing . appProjectEnv
 ```
 
-For authentication information, we can similarly create a re-usable [`Authentication.hs`](https://gist.github.com/nicolashery/4dcf7003564c576d0d2f4872447c7b02#file-authentication-hs) module and introduce a `HasAuth` type class:
+In the same manner, for authentication information, we can create a reusable [`Authentication.hs`](https://gist.github.com/nicolashery/4dcf7003564c576d0d2f4872447c7b02#file-authentication-hs) module and introduce a `HasAuth` type class:
 
 ```haskell
 data AuthEnv = AuthEnv
@@ -870,21 +870,21 @@ class HasAuth env where
   getAuth :: env -> AuthEnv
 ```
 
-An replace the concrete helper function we defined in the previous section:
+This was the concrete helper function to get the current user we defined in the previous section:
 
 ```haskell
 getUserId :: AppProject UserId
 getUserId = asks (userId . appAuthenticatedEnv)
 ```
 
-With a generalized version using the `HasAuth` type class:
+We can now replace it with a generalized version using the `HasAuth` type class:
 
 ```haskell
 getUserId :: (MonadReader env m, HasAuth env) => m UserId
 getUserId = userId <$> asks getAuth
 ```
 
-We then define instances for the environments of each handler monads:
+We then define instances for the environments of each handler monad:
 
 ```haskell
 instance HasAuth AppAuthenticatedEnv where
@@ -897,7 +897,7 @@ instance HasAuth AppTicketEnv where
   getAuth = getAuth . appProjectEnv
 ```
 
-The request handler implementations stay the same as in the previous section, except now we are importing the shared helper functions that leverage the `Has*` type classes, instead of using concrete implementations for each level of the nested API:
+The implementation of the request handlers stays the same as the previous section, except now we import the shared helper functions that leverage the `Has*` type classes instead of using concrete functions specific to that API level:
 
 ```haskell
 import Authentication (getUserId)
@@ -921,9 +921,9 @@ createProjectHandler projectName = traced "create_project" $ do
   -- ...
 ```
 
-Note that using this "Has type class" pattern is optional and staying with the implementation from the previous section is perfectly fine and could work for a lot of projects and teams.
+Note that introducing the "Has type class" pattern is optional. Keeping the previous section's implementation is completely fine and can work for many projects and teams.
 
-One may call out that defining all the `Has*` type classes and providing instances does feel like a bit of boilerplate still. I think [the `rio` tutorial](https://www.fpcomplete.com/haskell/library/rio/) has some good arguments on why that is acceptable:
+One may call out that defining all of the `Has*` type classes and instances still feels a bit like boilerplate. I think [the `rio` tutorial](https://www.fpcomplete.com/haskell/library/rio/) has some good arguments on why that might be acceptable:
 
 > - The boilerplate here, amortized across a project, is really small
 > - This is the “safe” kind of boilerplate: the compiler will almost always prevent you from making a mistake
@@ -937,7 +937,7 @@ I'll also add that, like any generalization at the type level, the compiler erro
 >
 > **Matt Parsons, Production Haskell (2023), "5.3 AppEnvironment"**
 
-Although in practice and on the codebases I've worked on, I didn't see or hear of any notable issues with this particular pattern.
+Although in practice and on the codebases I've worked on, I didn't notice any notable issues with this particular pattern.
 
 ## Wrapping up
 

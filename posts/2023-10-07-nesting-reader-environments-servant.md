@@ -941,15 +941,15 @@ Although in practice and on the codebases I've worked on, I didn't notice any no
 
 ## Wrapping up
 
-If you'd like to browse the full source code for the example used in this post you can find it in [this gist](https://gist.github.com/nicolashery/4dcf7003564c576d0d2f4872447c7b02). The modules are organized as such:
+If you'd like to browse the complete source code for the example used in this post, you can find it in [this gist](https://gist.github.com/nicolashery/4dcf7003564c576d0d2f4872447c7b02). The modules are organized as such:
 
-- [`Api.hs`](https://gist.github.com/nicolashery/4dcf7003564c576d0d2f4872447c7b02#file-api-hs): Servant nested API definition using `NamedRoutes`
+- [`Api.hs`](https://gist.github.com/nicolashery/4dcf7003564c576d0d2f4872447c7b02#file-api-hs): The nested API definition using Servant `NamedRoutes`
 
-- [`Server.hs`](https://gist.github.com/nicolashery/4dcf7003564c576d0d2f4872447c7b02#file-server-hs): Wire the API definition to request handlers to create nested Servant Servers using `hoistServer`
+- [`Server.hs`](https://gist.github.com/nicolashery/4dcf7003564c576d0d2f4872447c7b02#file-server-hs): Attach request handlers to the API definition and create nested Servant servers using `hoistServer`
 
-- [`Main.hs`](https://gist.github.com/nicolashery/4dcf7003564c576d0d2f4872447c7b02#file-main-hs): Create server-wide dependencies and run the root Server
+- [`Main.hs`](https://gist.github.com/nicolashery/4dcf7003564c576d0d2f4872447c7b02#file-main-hs): Create server-wide dependencies and run the root server
 
-- The different `ReaderT env IO` custom monads and their environments, along with the handler implementations for each level of the nested API:
+- For each level of the nested API, the `ReaderT env IO` custom monads, their environments, and the request handler implementations:
   - [`App.hs`](https://gist.github.com/nicolashery/4dcf7003564c576d0d2f4872447c7b02#file-app-hs)
   - [`AppAuthenticated.hs`](https://gist.github.com/nicolashery/4dcf7003564c576d0d2f4872447c7b02#file-appauthenticated-hs)
   - [`AppProject.hs`](https://gist.github.com/nicolashery/4dcf7003564c576d0d2f4872447c7b02#file-appproject-hs)
@@ -966,15 +966,15 @@ If you're curious, I also created [a `rio` port](https://gist.github.com/nicolas
 
 To summarize, some of the key takeaways for this article are:
 
-- **Use `NamedRoutes` and records to define nested Servant APIs**. Although not a requirement, they help with code clarity and better type errors over anonymous routes.
-- **Be wary of re-creating server-wide dependencies and resources on every request** by instantiating them in the transformation function of `hoistServer`. Instead, create them in your `main` function and pass them as a dependencies to the server functions.
-- **Use `hoistServer` multiple times to embed handlers running in different custom monads**, matching the nested structure of the API definition.
-- **Use `withReaderT` to map from one request environment to another**, embedding the previous environment in the next one, and adding new context attributes and resources.
+- **Use `NamedRoutes` and records to define nested Servant APIs**. Although not a requirement, they help with code clarity and have better type errors than anonymous routes.
+- **Be wary of recreating server-wide resources on every request** if you instantiate them in the transformation function of `hoistServer`. Instead, create them in your `main` function and pass them to the server functions as dependencies.
+- **Use `hoistServer` multiple times to combine request handlers running in different custom monads**, matching the nested structure of the API definition.
+- **Use `withReaderT` to map from one request environment to another**, embedding the previous environment into the next and adding new context attributes.
 
-Be mindful of what you choose to put in the different `ReaderT` request environments. As a reminder, the transformation function passed to `hoistServer` runs on every request. For example, fetching the user object might be cheap and used by most handlers, so a good candidate for adding the environment. But avoid more expensive operations or loading data that is only used by one or two handlers, that would be better done in the handlers themselves.
+Be mindful of what you choose to put in the different `ReaderT` request environments. Remember that the transformation function passed to `hoistServer` will run on every request. For example, fetching the user object could be relatively cheap and used by most handlers, so it would be a good candidate to add to the environment. But avoid more expensive operations or loading data only used by one or two handlers, that would be better done in the handlers themselves.
 
-The pattern described in this article using nested calls to `hoistServer` is not exactly a "middleware", although at first it seemed close to it for me. You can for instance throw an error if authentication fails and short-circuit all of the downstream handlers this way. However, you can't set response headers for instance.
+The pattern described in this article with nested calls to `hoistServer` is not a "middleware" pattern, although it might seem similar. For instance, we can throw an error if authentication fails and short-circuit all downstream handlers this way. However, we can't use other middleware features like setting the response headers.
 
-For proper middleware functionality, one can use any [WAI middleware](https://hackage.haskell.org/package/wai/docs/Network-Wai.html#t:Middleware) (ex: the ones in [`wai-extra`](https://hackage.haskell.org/package/wai-extra)) at the top-level. Or for more advanced users, you can also create your own Servant combinators (see William Yao's article ["Writing Servant combinators for fun and profit"](https://williamyaoh.com/posts/2023-02-28-writing-servant-combinators.html) for a good introduction on how to do so).
+For proper middleware functionality, we can wrap the top-level server with any [WAI middleware](https://hackage.haskell.org/package/wai/docs/Network-Wai.html#t:Middleware), such as the ones from [`wai-extra`](https://hackage.haskell.org/package/wai-extra). Or, for more advanced users, you can also create your own Servant combinators (see William Yao's article ["Writing Servant combinators for fun and profit"](https://williamyaoh.com/posts/2023-02-28-writing-servant-combinators.html) for a detailed introduction on how to do so).
 
-Finally, I'll mention that this is only one possible way to structure your web application. Regardless which patterns and conventions are used, what's probably more important is that they are documented and well understood by the team. I also recommend to let the structure of the application grow organically. It's better to start simple with a single environment, and only split things up when obvious sub-domains start to emerge.
+Finally, this is only one possible way to structure a web application. Regardless of which patterns and conventions are used, what's more important is that they are documented and well-understood by the team. It's also good practice to let the application structure grow organically. Start simple with only a single environment and split things up when and if obvious sub-domains appear.

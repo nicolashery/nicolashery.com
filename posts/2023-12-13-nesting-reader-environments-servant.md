@@ -301,7 +301,7 @@ From top to bottom, or parent to child, the different levels in this example are
 
 And here is what the first couple of levels look like in Haskell, using Servant's `NamedRoutes` to declare each sub-API as a record:
 
-```haskell 
+```haskell
 type Api =
   "v1"
     :> Header "traceparent" TraceParentHeader
@@ -370,7 +370,7 @@ data AppEnv = AppEnv
   -- Above are server-wide dependencies, below are request-specific
   , activeSpan :: IORef Span
   }
-  
+
 runApp :: AppEnv -> App a -> Handler a
 runApp = -- ...
 
@@ -415,7 +415,7 @@ rootServer deps =
     , layout = layoutHandler
     , authenticatedApi = -- ...
     }
-    
+
 healthHandler :: App NoContent
 layoutHandler :: App Text
 
@@ -428,7 +428,7 @@ authenticatedServer maybeAuthHeader =
     { listOrganizations = listOrganizationsHandler
     , projectApi = -- ...
     }
-   
+
 listOrganizationsHandler :: AppAuthenticated ListOrganizationsResponse
 
 -- Level 3
@@ -505,7 +505,7 @@ authenticatedServer' deps maybeAuthHeader =
               , appOrganizationService = depsOrganizationService deps
               }
       runAppAuthenticated appAuthenticatedEnv action
-        
+
 authenticatedServer
   :: Maybe AuthorizationHeader
   -> ServerT (NamedRoutes AuthenticatedApi) AppAuthenticated

@@ -152,11 +152,11 @@ The minor bug mentioned earlier was an HTTP connection `Manager` being recreated
 
 > If possible, you should share a single `Manager` between multiple threads and requests.
 >
-> https://hackage.haskell.org/package/http-client/docs/Network-HTTP-Client.html#t:Manager
+> [hackage.haskell.org/package/http-client/docs/Network-HTTP-Client.html#t:Manager](https://hackage.haskell.org/package/http-client/docs/Network-HTTP-Client.html#t:Manager)
 
 > Creating a new `Manager` is a relatively expensive operation, you are advised to share a single `Manager` between requests instead.
 >
-> https://hackage.haskell.org/package/http-client/docs/Network-HTTP-Client.html#v:newManager
+> [hackage.haskell.org/package/http-client/docs/Network-HTTP-Client.html#v:newManager](https://hackage.haskell.org/package/http-client/docs/Network-HTTP-Client.html#v:newManager)
 
 In our example, let's add logging to the functions that create the resources and attributes for `AppEnv`. Then, we'll run the first server implementation above and make two requests. Here is the log output in the terminal, with some comments added for clarity:
 
@@ -783,7 +783,7 @@ In the next section, we'll see one way to address these issues.
 
 For functionality reused across different levels of the nested API (ex: `traced`, `getUserId`, `runDatabase`, etc.), instead of hard-coding to a specific monad and environment (ex: `App`, `AppAuthenticated`, etc.), we can generalize and introduce `Has*` type classes.
 
-Similar to the "ReaderT" design pattern we've been using, the "Has type class" pattern seems popular. It is also recommended by the `rio` library (see the ["`Has` type classes"](https://www.fpcomplete.com/haskell/library/rio/) section of the tutorial).
+Similar to the "ReaderT" design pattern we've been using, the "Has type class" pattern seems popular. It is also recommended by the `rio` library (see the [`Has` type classes](https://www.fpcomplete.com/haskell/library/rio/) section of the tutorial).
 
 What does it look like in our example? Let's take the tracing functionality with the `traced` function, a good example of reuse since all our handlers call it. First, we wrap in a single record `TracingEnv` everything the function needs from the environment: the tracer and the active span. Then, we define the `HasTracing` type class to retrieve this tracing context:
 
@@ -944,17 +944,13 @@ Although in practice and on the codebases I've worked on, I didn't notice any no
 If you'd like to browse the complete source code for the example used in this post, you can find it in [this gist](https://gist.github.com/nicolashery/4dcf7003564c576d0d2f4872447c7b02). The modules are organized as such:
 
 - [`Api.hs`](https://gist.github.com/nicolashery/4dcf7003564c576d0d2f4872447c7b02#file-api-hs): The nested API definition using Servant `NamedRoutes`
-
 - [`Server.hs`](https://gist.github.com/nicolashery/4dcf7003564c576d0d2f4872447c7b02#file-server-hs): Attach request handlers to the API definition and create nested Servant servers using `hoistServer`
-
 - [`Main.hs`](https://gist.github.com/nicolashery/4dcf7003564c576d0d2f4872447c7b02#file-main-hs): Create server-wide dependencies and run the root server
-
 - For each level of the nested API, the `ReaderT env IO` custom monads, their environments, and the request handler implementations:
   - [`App.hs`](https://gist.github.com/nicolashery/4dcf7003564c576d0d2f4872447c7b02#file-app-hs)
   - [`AppAuthenticated.hs`](https://gist.github.com/nicolashery/4dcf7003564c576d0d2f4872447c7b02#file-appauthenticated-hs)
   - [`AppProject.hs`](https://gist.github.com/nicolashery/4dcf7003564c576d0d2f4872447c7b02#file-appproject-hs)
   - [`AppTicket.hs`](https://gist.github.com/nicolashery/4dcf7003564c576d0d2f4872447c7b02#file-appticket-hs)
-
 - Reusable logic and services, using the `Has*` type class pattern:
   - [`Database.hs`](https://gist.github.com/nicolashery/4dcf7003564c576d0d2f4872447c7b02#file-database-hs)
   - [`Logging.hs`](https://gist.github.com/nicolashery/4dcf7003564c576d0d2f4872447c7b02#file-logging-hs)
@@ -975,6 +971,6 @@ Be mindful of what you choose to put in the different `ReaderT` request environm
 
 The pattern described in this article with nested calls to `hoistServer` is not a "middleware" pattern, although it might seem similar. For instance, we can throw an error if authentication fails and short-circuit all downstream handlers this way. However, we can't use other middleware features like setting the response headers.
 
-For proper middleware functionality, we can wrap the top-level server with any [WAI middleware](https://hackage.haskell.org/package/wai/docs/Network-Wai.html#t:Middleware), such as the ones from [`wai-extra`](https://hackage.haskell.org/package/wai-extra). Or, for more advanced users, you can also create your own Servant combinators (see William Yao's article ["Writing Servant combinators for fun and profit"](https://williamyaoh.com/posts/2023-02-28-writing-servant-combinators.html) for a detailed introduction on how to do so).
+For proper middleware functionality, we can wrap the top-level server with any [WAI middleware](https://hackage.haskell.org/package/wai/docs/Network-Wai.html#t:Middleware), such as the ones from [`wai-extra`](https://hackage.haskell.org/package/wai-extra). Or, for more advanced users, you can also create your own Servant combinators (see William Yao's article [Writing Servant combinators for fun and profit](https://williamyaoh.com/posts/2023-02-28-writing-servant-combinators.html) for a detailed introduction on how to do so).
 
 Finally, this is only one possible way to structure a web application. Regardless of which patterns and conventions are used, what's more important is that they are documented and well-understood by the team. It's also good practice to let the application structure grow organically. Start simple with only a single environment and split things up when and if obvious sub-domains appear.

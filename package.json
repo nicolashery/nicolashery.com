@@ -20,11 +20,11 @@
   },
   "homepage": "https://github.com/nicolashery/nicolashery.com#readme",
   "devDependencies": {
-    "@11ty/eleventy": "^2.0.1",
-    "@11ty/eleventy-plugin-rss": "^1.2.0",
+    "@11ty/eleventy": "^3.0.0",
+    "@11ty/eleventy-plugin-rss": "^2.0.3",
     "@11ty/eleventy-plugin-syntaxhighlight": "^5.0.0",
-    "lightningcss-cli": "^1.25.1",
-    "markdown-it-anchor": "^9.0.1",
-    "markdown-it-table-of-contents": "^0.6.0"
+    "lightningcss-cli": "^1.29.1",
+    "markdown-it-anchor": "^9.2.0",
+    "markdown-it-table-of-contents": "^0.9.0"
   }
 }

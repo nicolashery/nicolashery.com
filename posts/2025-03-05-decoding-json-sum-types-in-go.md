@@ -138,11 +138,88 @@ Did you see the error? I yes, then you can stop reading now and get back to work
 
 ## Decoding JSON sum types in Go, take one
 
-- this is the JSON we are getting (it is not unreasonable, OpenAPI has a discriminator example similar to this)
-- naive attempt, "bag of all the things" (all possible fields merged into a struct, as nil-able pointers)
-- works because JSON unmarshall ignores missing and sets to zero value
-- but subtle bug if trying to access a value that is nil because unused by that action type
-- (yes could use methods to access value or transform struct but still have underlying problem of a carrying around a struct with nil pointers)
+How did I get to the code above you might wonder? Well, imagine our service is receiving a JSON payload that looks like this:
+
+```json
+[
+  {
+    "type": "create_object",
+    "object": {
+      "type": "user",
+      "id": "1",
+      "name": "user1"
+    }
+  },
+  {
+    "type": "update_object",
+    "object": {
+      "type": "user",
+      "id": "1",
+      "name": "user1 updated"
+    }
+  },
+  {
+    "type": "delete_object",
+    "id": "1"
+  },
+  {
+    "type": "delete_all_objects"
+  }
+]
+```
+
+These are all different types of "actions", and this JSON representation is not unreasonable. The [OpenAPI specification](https://swagger.io/specification/#discriminator-object) has a discriminator "pet" example, and the [Redocly documentation](https://redocly.com/learn/openapi/discriminator) a "vehicle" example, that are similar to this. (I have yet to come across an API with pets so my example will be the less fun "actions", appologies.)
+
+My naive attempt to decode this JSON, because I was in a rush (and maybe also because Copilot suggested it, if I'm being honest), was to create a struct which I call *"bag of all the things"*. This is a struct with all possible fields for every action type merged, and using pointers. The zero-value of pointers is `nil` which will be set for fields that are "unused" by a particular action type. Here it is in all its glory:
+
+```go
+type Action struct {
+	Type   ActionType `json:"type"`
+	Object *Object    `json:"object,omitempty"`
+	ID     *string    `json:"id,omitempty"`
+}
+
+type ActionType string
+
+const (
+	ActionType_CreateObject     ActionType = "create_object"
+	ActionType_UpdateObject     ActionType = "update_object"
+	ActionType_DeleteObject     ActionType = "delete_object"
+	ActionType_DeleteAllObjects ActionType = "delete_all_objects"
+)
+```
+
+This works because `json.Unmarshal` doesn't care if there are missing fields in the JSON payload, it will just set the zero-value for them:
+
+```go
+actions := []Action{}
+if err := json.Unmarshal(data, &actions); err != nil {
+  return err
+}
+```
+
+We can of course also go the other way and call `json.Marshal` to encode into the same JSON representation as the snippet above. The `omitempty` struct tag option will remove fields unused by each action type from the resulting JSON.
+
+So we're off to the races, what can go wrong with a bag of pointers? Subtle bugs when trying to access a field that is `nil` because unused by that action type, that's what:
+
+```go
+switch a.Type {
+case ActionType_CreateObject:
+  result = fmt.Sprintf(
+    "create_object %s %s %s", a.Object.Type, a.Object.ID, a.Object.Name,
+  )
+case ActionType_UpdateObject:
+  result = fmt.Sprintf(
+    "update_object %s %s %s", a.Object.Type, a.Object.ID, a.Object.Name,
+  )
+case ActionType_DeleteObject:
+  result = fmt.Sprintf("delete_object %s", a.Object.ID) // <- the bug was here!
+  // for this action type `a.Object` is `nil`
+  // the correct code should be: `*a.ID`
+case ActionType_DeleteAllObjects:
+  result = "delete_all_objects"
+}
+```
 
 ## How does OpenAPI or Protobuf codegen do it?
 

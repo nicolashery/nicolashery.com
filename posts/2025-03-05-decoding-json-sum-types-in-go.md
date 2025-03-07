@@ -14,9 +14,7 @@ Many languages support sum types natively: [Zig](https://zig.guide/language-basi
 
 Personal feelings about sum types aside, I think most people would agree they are not a terrible way to model a data structure that can be *"one of these (potentially very different) things, and nothing else"*. And once you've used sum types in a match/**switch statement**/expression combined with **exhaustiveness checking**, well I find it's hard to go back.
 
-If you already know what a sum type is and why they are called that way feel free to skip over to the next section. Let's take a primitive type, a boolean or `bool` in Rust. It has 2 possible values: `true` or `false` (also called "cardinality").
-
-A struct or record is called a **"product type"** because you can count the number of possible values (or cardinality) by *multiplying* the number of possible values of each field. So if I have a struct with 2 boolean fields (example here in Rust):
+Let's take a primitive type, a boolean or `bool` in Rust. It has 2 possible values: `true` or `false` (also called "cardinality"). A struct or record is called a **"product type"** because you can count the number of possible values (or cardinality) by *multiplying* the number of possible values of each field. So if I have a struct with 2 boolean fields (example here in Rust):
 
 ```rust
 struct UserStatus {
@@ -44,17 +42,32 @@ I'll leave it as an exercise to the reader to discuss and decide which of these 
 
 ## My first nil pointer panic in Go was due to lack of sum types
 
-- cheeky but kind of felt that way
-- if I'm honest probably could've structured my code better (even without sum types) instead of coding like a gorilla trying to go fast, as we'll see
-- first Go project
-- don't get me wrong, really enjoy working with Go at the moment and this is not one of those "Go should have sum types" post
-- fast compile times, doing a lot with sdtlib, great dev tooling
-- Alex Edward's Let's Go Further example compiled so fast had to run it again to be sure
-- sync service between Keycloak (authentication) and Topaz (authorization)
-- feeling really productive (coming from TypeScript, Haskell most recently)
-- first proof of concept in a week or so
-- then it hits me (nil pointer panic)
-- can you spot the error in the code? you have 5 seconds. Yes? you can stop reading now (joking) No? the Go type checking couldn't either don't worry
+Ok, that section title is a bit cheeky and probably not entirely true. But when I figured out what caused the panic in my code, the thought "sum types would've caught this at compile time" _did_ cross my mind. I'm sure the astute reader could find better ways to structure my first implementation, even without sum types. But humour me for the sake of this article.
+
+Let me say it now: This is _not_ one of those "Go should have sum types" post. A lot has already been written on the topic and I don't want to get into the debate (although you'll probably guess where I stand). Let's just assume I want to _emulate_ something like sum types in Go, then:
+
+1. How do I do so without straying too far from what's idiomatic in the language?
+2. How do I encode and decode it to and from JSON with the structure we'll see below?
+
+This is also not a criticism of Go. This was my first Go project, and I actually enjoyed working with the language. Having shied away from it for a while (notably because of lack of sum types), I finally gave it a try because it seemed a good fit for this project. The fast compile times, robust standard library, and great developer tooling all delivered on their promise.
+
+For the anecdote, the first time I ran `go build` was on the sample codebase from [Alex Edward's  "Let's Go Further" book](https://lets-go-further.alexedwards.net/) (excellent book by the way), and I had to run it again because it was so much faster than what I was used to (*cough* Haskell *cough*), I thought nothing had happened.
+
+So, I'm feeling very productive on this project. The feedback loop is amazing, I have a working proof of concept in just a couple of days, I'm coding away like there's no tomorrow, zero values and pointers do not scare me, just need to add this last thing and... Then it hits me:
+
+``` text
+nil panic
+```
+
+Ouch. Having done a lot of Haskell and (strict) TypeScript recently, I had forgotten a bit about such runtime errors. But I don't panic, and I carefully look at the code mentioned in the stack trace.
+
+Below is a simplified version of the code for the sake of this article (the actual implementation had bigger structures and more cases). Can you spot the error? You have 5 seconds.
+
+```go
+// ...
+```
+
+Did you see it? I yes, then you can stop reading now and get back to work. I'm joking. Didn't see it in the allowed time limit? Don't worry, the Go type checker couldn't either.
 
 ## Decoding JSON sum types in Go, take one
 

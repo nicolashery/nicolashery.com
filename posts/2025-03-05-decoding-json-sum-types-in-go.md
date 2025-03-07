@@ -170,7 +170,7 @@ How did I get to the code above you might wonder? Well, imagine our service is r
 
 These are all different types of "actions", and this JSON representation is not unreasonable. The [OpenAPI specification](https://swagger.io/specification/#discriminator-object) has a discriminator "pet" example, and the [Redocly documentation](https://redocly.com/learn/openapi/discriminator) a "vehicle" example, that are similar to this. (I have yet to come across an API with pets so my example will be the less fun "actions", appologies.)
 
-My naive attempt to decode this JSON, because I was in a rush (and maybe also because Copilot suggested it, if I'm being honest), was to create a struct which I call *"bag of all the things"*. This is a struct with all possible fields for every action type merged, and using pointers. The zero-value of pointers is `nil` which will be set for fields that are "unused" by a particular action type. Here it is in all its glory:
+My naive attempt to decode this JSON, because I was in a rush (and maybe also because Copilot suggested it, if I'm being honest), was to create a struct which I call *"bag of all the fields"*. This is a struct with all possible fields for every action type merged, and using pointers. The zero-value of pointers is `nil` which will be set for fields that are "unused" by a particular action type. Here it is in all its glory:
 
 ```go
 type Action struct {
@@ -221,13 +221,150 @@ case ActionType_DeleteAllObjects:
 }
 ```
 
-## How does OpenAPI or Protobuf codegen do it?
+## How do OpenAPI and Protobuf handle this?
 
-- OpenAPI: bag of all branches or deferred decoding
-- Get back `any` so no static analysis (could still make mistake panic at run time)
+I pick myself up after this runtime panic, and have the following genius idea: There are code generators for OpenAPI, if I give them the specification for the JSON discriminated union above, what do they output for Go? Also, [Protobuf](http://protobuf.dev/) is a popular wire format that is based on code generation, and the [Oneof field](https://protobuf.dev/programming-guides/editions/#oneof) looks a lot like a sum type, so what do they generate for Go?
+
+The OpenAPI schema for an action would look like this:
+
+```yaml
+Action:
+  type: object
+  discriminator:
+    propertyName: type
+    mapping:
+      "create_object": "#/components/schemas/CreateObject"
+      "update_object": "#/components/schemas/UpdateObject"
+      "delete_object": "#/components/schemas/DeleteObject"
+      "delete_all_objects": "#/components/schemas/DeleteAllObjects"
+  oneOf:
+    - $ref: "#/components/schemas/CreateObject"
+    - $ref: "#/components/schemas/UpdateObject"
+    - $ref: "#/components/schemas/DeleteObject"
+    - $ref: "#/components/schemas/DeleteAllObjects"
+CreateObject:
+  type: object
+  properties:
+    type:
+      type: string
+    object:
+      $ref: "#/components/schemas/Object"
+# ...
+```
+
+If I feed this to the [OpenAPI Generator](https://openapi-generator.tech/) (note that I'm using the `useOneOfDiscriminatorLookup=true` option for better output), I get what I'll call a *"bag of all the branches"*:
+
+```go
+type Action struct {
+	createObject     *CreateObject
+	updateObject     *UpdateObject
+	deleteObject     *DeleteObject
+	deleteAllObjects *DeleteAllObjects
+}
+
+type CreateObject struct {
+	Object Object `json:"object"`
+}
+
+// ...
+```
+
+It generates an `UnmarshalJSON` method for `Action` that:
+
+- first decodes the JSON to check the `"type"` field (this is thanks to the `useOneOfDiscriminatorLookup=true` codegen option)
+- according to the value of `"type"`, it chooses the appropriate branch and decodes the JSON using the corresponding struct (`CreateObject`, `UpdateObject`, etc.)
+
+Edited for clarity, it looks something like this:
+
+```go
+func (a *Action) UnmarshalJSON(data []byte) error {
+	var tagged struct {
+		Type ActionType `json:"type"`
+	}
+
+	if err := json.Unmarshal(data, &tagged); err != nil {
+		return err
+	}
+
+	var err error
+	switch tagged.Type {
+	case ActionType_CreateObject:
+		err = json.Unmarshal(data, &a.createObject)
+	case ActionType_UpdateObject:
+		err = json.Unmarshal(data, &a.updateObject)
+	case ActionType_DeleteObject:
+		err = json.Unmarshal(data, &a.deleteObject)
+	case ActionType_DeleteAllObjects:
+		err = json.Unmarshal(data, &a.deleteAllObjects)
+	}
+
+	return nil
+}
+```
+
+To get to the actual underlying value, the generator creates a method (which I'll name `Value()` here) that returns the first non-nil pointer:
+
+```go
+func (a *Action) Value() any {
+	if a.createObject != nil {
+		return a.createObject
+	}
+
+	if a.updateObject != nil {
+		return a.updateObject
+	}
+
+	if a.deleteObject != nil {
+		return a.deleteObject
+	}
+
+	if a.deleteAllObjects != nil {
+		return a.deleteAllObjects
+	}
+
+	return nil
+}
+```
+
+So this is already a big improvement on my *"bag of all the fields"* approach. Since the accessor method to the underlying value returns `any`, I'm now checking the `.(type)` which can be one of the more precise structs (`CreateObject`, `UpdateObject`, etc.):
+
+```go
+func TransformAction(action *Action) string {
+	var result string
+
+	switch v := action.Value().(type) {
+	case *CreateObject:
+		result = fmt.Sprintf(
+			"create_object %s %s %s", v.Object.Type, v.Object.ID, v.Object.Name,
+		)
+	case *UpdateObject:
+		result = fmt.Sprintf(
+			"update_object %s %s %s", v.Object.Type, v.Object.ID, v.Object.Name,
+		)
+	case *DeleteObject:
+		result = fmt.Sprintf("delete_object %s", v.ID) // <- can't make the same mistake here!
+		// trying to do `v.Object.ID` will cause a compiler error:
+		// "type *DeleteObject has no field or method Object"
+	case *DeleteAllObjects:
+		result = "delete_all_objects"
+	}
+
+	return result
+}
+```
+
+Some issues remain though:
+
+- I "trust" the `any` return value of the accessor method to be one of the action structs (`CreateObject`, `UpdateObject`, etc.) and nothing else
+- If I add a "branch" (i.e. another action type), I can forget to update the `switch` statement in `TransformAction`
+
+Next:
+
+- Note on other openapi codegen (json raw message)
+
 - Protobuf: use a "sealed" interface to represent options
 
-## Decoding JSON sum type in Go, take two
+## Decoding JSON sum types in Go, take two
 
 - sealed interface to represent actions
 - static analysis: go-check-sumtypes (exhaustiveness checking)

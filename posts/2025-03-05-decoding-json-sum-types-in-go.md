@@ -223,7 +223,7 @@ case ActionType_DeleteAllObjects:
 
 ## How do OpenAPI and Protobuf handle this?
 
-I pick myself up after this runtime panic, and have the following genius idea: There are code generators for OpenAPI, if I give them the specification for the JSON discriminated union above, what do they output for Go? Also, [Protobuf](http://protobuf.dev/) is a popular wire format that is based on code generation, and the [Oneof field](https://protobuf.dev/programming-guides/editions/#oneof) looks a lot like a sum type, so what do they generate for Go?
+I pick myself up after this runtime panic, and have the following genius idea: There are code generators for OpenAPI, if I give them the specification for the JSON discriminated union above, what do they output for Go? Also, [Protocol Buffers](http://protobuf.dev/) is a popular wire format that is based on code generation, and the [Oneof field](https://protobuf.dev/programming-guides/editions/#oneof) looks a lot like a sum type, so what do they generate for Go?
 
 The OpenAPI schema for an action would look like this:
 
@@ -358,11 +358,74 @@ Some issues remain though:
 - I "trust" the `any` return value of the accessor method to be one of the action structs (`CreateObject`, `UpdateObject`, etc.) and nothing else
 - If I add a "branch" (i.e. another action type), I can forget to update the `switch` statement in `TransformAction`
 
-Next:
+There is another generator [oapi-codegen](https://github.com/oapi-codegen/oapi-codegen) that I tried out. I has a slight twist in that it holds on to a `json.RawMessage` and delays the decoding until we call an equivalent of the `action.Value()` accessor method:
 
-- Note on other openapi codegen (json raw message)
+```go
+type Action struct {
+	union json.RawMessage
+}
 
-- Protobuf: use a "sealed" interface to represent options
+type CreateObject struct {
+	Type   string `json:"type"`
+	Object Object `json:"object"`
+}
+
+// ...
+
+func (a *Action) Value() (any, err) {
+  // JSON decoding happens here now
+}
+```
+
+The decoding works essentially the same, first decode enough to check the `"type"` field, then according to its value unmarshal into one of the action structs (`CreateObject`, `UpdateObject`, etc.). The [ `json.RawMessage` documentation](https://pkg.go.dev/encoding/json#example-RawMessage-Unmarshal) actually has a similar example.
+
+Since delaying JSON decoding wasn't particularly useful in my case, I didn't choose this route. But I wanted to mention it for completeness' sake.
+
+What about **Protocol Buffers** (aka "Protobuf")? They were interesting to me because I spotted this in the [Go generated code guide](https://pkg.go.dev/encoding/json#example-RawMessage-Unmarshal):
+
+> For a oneof field, the protobuf compiler generates a single field with an interface type `isMessageName_MyField`. It also generates a struct for each of the singular fields within the oneof. These all implement this `isMessageName_MyField` interface.
+
+Even though we're working with a JSON API, a Protobuf definition for our data model could look like this:
+
+```protobuf
+message Action {
+  oneof value {
+    CreateObject create_object = 1;
+    UpdateObject update_object = 2;
+    DeleteObject delete_object = 3;
+    DeleteAllObjects delete_all_objects = 4;
+  }
+}
+
+message CreateObject {
+  Object object = 1;
+}
+
+// ...
+```
+
+The generated code indeed creates an interface `isAction_Value` with a single method, and an `Action` struct that holds a field of that interface.
+
+```go
+type Action struct {
+	Value isAction_Value `protobuf_oneof:"value"`
+	// other protobuf-specific fields omitted
+}
+
+type isAction_Value interface {
+	isAction_Value()
+}
+
+type Action_CreateObject struct {
+	CreateObject *CreateObject `protobuf:"bytes,1,opt,name=create_object,json=createObject,oneof"`
+}
+
+func (*Action_CreateObject) isAction_Value() {}
+
+// ...
+```
+
+Now these two code generators, OpenAPI and Protobuf, will be the inspiration for my second attempt at decoding the JSON sum type in a more type-safe way...
 
 ## Decoding JSON sum types in Go, take two
 

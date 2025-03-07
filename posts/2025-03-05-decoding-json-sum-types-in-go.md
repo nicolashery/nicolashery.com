@@ -49,14 +49,25 @@ Let me say it now: This is _not_ one of those "Go should have sum types" post. A
 1. How do I do so without straying too far from what's idiomatic in the language?
 2. How do I encode and decode it to and from JSON with the structure we'll see below?
 
-This is also not a criticism of Go. This was my first Go project, and I actually enjoyed working with the language. Having shied away from it for a while (notably because of lack of sum types), I finally gave it a try because it seemed a good fit for this project. The fast compile times, robust standard library, and great developer tooling all delivered on their promise.
+This is also not a criticism of Go. This was my first Go project, and I actually enjoyed working with the language. Having shied away from it for a while (notably because of lack of sum types), I finally gave it a try because it seemed a good fit for this project. The fast compile times, robust standard library, simplicity of the language, and great developer tooling all delivered on their promise.
 
 For the anecdote, the first time I ran `go build` was on the sample codebase from [Alex Edward's  "Let's Go Further" book](https://lets-go-further.alexedwards.net/) (excellent book by the way), and I had to run it again because it was so much faster than what I was used to (*cough* Haskell *cough*), I thought nothing had happened.
 
 So, I'm feeling very productive on this project. The feedback loop is amazing, I have a working proof of concept in just a couple of days, I'm coding away like there's no tomorrow, zero values and pointers do not scare me, just need to add this last thing and... Then it hits me:
 
 ``` text
-nil panic
+2024/12/07 12:16:53 http: panic serving [::1]:60984:
+runtime error: invalid memory address or nil pointer dereference
+goroutine 4 [running]:
+net/http.(*conn).serve.func1()
+    /usr/local/go/src/net/http/server.go:1947 +0xb0
+panic({0x100a00f00?, 0x100f19b00?})
+    /usr/local/go/src/runtime/panic.go:785 +0x124
+example/main.TransformAction(0x14000115e08)
+    /Users/nicolashery/dev/example/main.go:110 +0x1c
+example/main.(*Server).handleTransformActions(0x140001cad80, {0x100ad6358, 0x14000160380}, 0x140001597c0)
+    /Users/nicolashery/dev/example/main.go:157 +0x20c
+[...]
 ```
 
 Ouch. Having done a lot of Haskell and (strict) TypeScript recently, I had forgotten a bit about such runtime errors. But I don't panic, and I carefully look at the code mentioned in the stack trace.
@@ -64,10 +75,66 @@ Ouch. Having done a lot of Haskell and (strict) TypeScript recently, I had forgo
 Below is a simplified version of the code for the sake of this article (the actual implementation had bigger structures and more cases). Can you spot the error? You have 5 seconds.
 
 ```go
-// ...
+func TransformAction(a *Action) string {
+	var result string
+
+	switch a.Type {
+	case ActionType_CreateObject:
+		result = fmt.Sprintf(
+			"create_object %s %s %s", a.Object.Type, a.Object.ID, a.Object.Name,
+		)
+	case ActionType_UpdateObject:
+		result = fmt.Sprintf(
+			"update_object %s %s %s", a.Object.Type, a.Object.ID, a.Object.Name,
+		)
+	case ActionType_DeleteObject:
+		result = fmt.Sprintf("delete_object %s", a.Object.ID)
+	case ActionType_DeleteAllObjects:
+		result = "delete_all_objects"
+	}
+
+	return result
+}
 ```
 
-Did you see it? I yes, then you can stop reading now and get back to work. I'm joking. Didn't see it in the allowed time limit? Don't worry, the Go type checker couldn't either.
+Ok, obviously you'll want to `Cmd/Ctrl+Click` on `Action` to see what it is:
+
+```go
+type Action struct {
+	Type   ActionType `json:"type"`
+	Object *Object    `json:"object,omitempty"`
+	ID     *string    `json:"id,omitempty"`
+}
+
+func NewActionCreateObject(object *Object) Action {
+	return Action{
+		Type:   ActionType_CreateObject,
+		Object: object,
+	}
+}
+
+func NewActionUpdateObject(object *Object) Action {
+	return Action{
+		Type:   ActionType_UpdateObject,
+		Object: object,
+	}
+}
+
+func NewActionDeleteObject(id string) Action {
+	return Action{
+		Type: ActionType_DeleteObject,
+		ID:   &id,
+	}
+}
+
+func NewActionDeleteAllObjects() Action {
+	return Action{
+		Type: ActionType_DeleteAllObjects,
+	}
+}
+```
+
+Did you see the error? I yes, then you can stop reading now and get back to work. I'm joking. Didn't see it in the allowed time limit? Don't worry, the Go type checker couldn't either.
 
 ## Decoding JSON sum types in Go, take one
 

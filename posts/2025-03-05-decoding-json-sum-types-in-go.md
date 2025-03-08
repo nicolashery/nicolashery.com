@@ -429,15 +429,193 @@ Now these two code generators, OpenAPI and Protobuf, will be the inspiration for
 
 ## Decoding JSON sum types in Go, take two
 
-- sealed interface to represent actions
-- static analysis: go-check-sumtypes (exhaustiveness checking)
-- wrapper struct
-- enums to represent action types
-- static analysis: exhaustive (enums)
-- unmarshall implementation
-- marshall implementation (roundtrip to add type field)
-- note: don't want type field on each struct as this is for serialization only (that is why don't marshal interface directly), and also could lead to inconsistencies
-- boilerplate but between AI and codegen don't mind (code is read and maintained more than written)
+After a bit of searching on the topic of "Go sum types", I stumbled across this: [go-check-sumtype](https://github.com/alecthomas/go-check-sumtype). From the README:
+
+> A typical proxy for representing sum types in Go is to use an interface with an unexported method and define each variant of the sum type in the same package to satisfy said interface. This guarantees that the set of types that satisfy the interface is closed at compile time.
+
+This "interface with an unexported method" (also called "sealed interface", or "marker interface") sounded like a reasonable way to do it. And it's also what the Protobuf codegen seems to be using.
+
+I replaced my single "bag of all the fields"  struct with a sealed interface `IsAction` and a struct for each variant that implements the interface (`CreateObject`, `UpdateObject`, etc.):
+
+```go
+//sumtype:decl
+type IsAction interface {
+	// sealed interface to emulate sum type
+	isAction()
+}
+
+type CreateObject struct {
+	Object Object `json:"object"`
+}
+
+func (*CreateObject) isAction() {}
+
+type UpdateObject struct {
+	Object Object `json:"object"`
+}
+
+func (*UpdateObject) isAction() {}
+
+type DeleteObject struct {
+	ID string `json:"id"`
+}
+
+func (*DeleteObject) isAction() {}
+
+type DeleteAllObjects struct{}
+
+func (*DeleteAllObjects) isAction() {}
+```
+
+Now I am quite pleased. Not only do these structs for each action type provide more type-safety, but if I forget to handle a variant in my `switch` statement (or if I add a new variant), the `go-check-sumtype` linter will catch it instead of getting an error at runtime!
+
+```go
+func TransformAction(action *Action) string {
+	var result string
+
+	switch v := action.Value().(type) { // <- if we miss a case here, `go-check-sumtype` will catch it!
+	// for example, omitting `case *DeleteAllObjects` will cause a linter error:
+	// "exhaustiveness check failed for sum type IsAction: missing cases for DeleteAllObjects"
+	case *CreateObject:
+		result = fmt.Sprintf(
+			"create_object %s %s %s", v.Object.Type, v.Object.ID, v.Object.Name,
+		)
+	case *UpdateObject:
+		result = fmt.Sprintf(
+			"update_object %s %s %s", v.Object.Type, v.Object.ID, v.Object.Name,
+		)
+	case *DeleteObject:
+		result = fmt.Sprintf("delete_object %s", v.ID) // <- better type-safety for each branch!
+		// for example, trying to do `v.Object.ID` will cause a compiler error:
+		// "type *DeleteObject has no field or method Object"
+	case *DeleteAllObjects:
+		result = "delete_all_objects"
+	}
+
+	return result
+}
+```
+
+I still needed to figure out how to decode the JSON sum types payload into this interface and structs. You can't unmarshal into an interface value directly, you need to pass a concrete type. So I created a wrapper struct like so:
+
+```go
+type Action struct {
+	value IsAction
+}
+```
+
+I also found the [exhaustive](https://github.com/nishanths/exhaustive) linter, so why stop at sum types when you can also have enums! I defined one for action types, which are used as "tags" in my tagged union, along with the proper methods for JSON and string representations:
+
+```go
+type ActionType int
+
+const (
+	ActionType_CreateObject ActionType = iota
+	ActionType_UpdateObject
+	ActionType_DeleteObject
+	ActionType_DeleteAllObjects
+)
+
+// note: `exhaustive` linter will catch if we miss an entry here
+var ActionTypeStringMap = map[ActionType]string{
+	ActionType_CreateObject:     "create_object",
+	ActionType_UpdateObject:     "update_object",
+	ActionType_DeleteObject:     "delete_object",
+	ActionType_DeleteAllObjects: "delete_all_objects",
+}
+
+func (t ActionType) MarshalJSON() ([]byte, error) {
+	// ...
+}
+
+func (t *ActionType) UnmarshalJSON(data []byte) error {
+	// ...
+}
+
+func (t ActionType) String() string {
+	// ...
+}
+```
+
+I then defined `UnmarshalJSON` for my wrapper struct like so:
+
+```go
+func (a *Action) UnmarshalJSON(data []byte) error {
+	var tag struct {
+		Type ActionType `json:"type"`
+	}
+
+	if err := json.Unmarshal(data, &tag); err != nil {
+		return err
+	}
+
+	var v IsAction
+	// note: `exhaustive` linter will catch if we miss a case here
+	switch tag.Type {
+	case ActionType_CreateObject:
+		v = new(CreateObject)
+	case ActionType_UpdateObject:
+		v = new(UpdateObject)
+	case ActionType_DeleteObject:
+		v = new(DeleteObject)
+	case ActionType_DeleteAllObjects:
+		v = new(DeleteAllObjects)
+	}
+
+	if err := json.Unmarshal(data, v); err != nil {
+		return err
+	}
+
+	a.value = v
+	return nil
+}
+```
+
+This works similarly to what we saw in the OpenAPI generated code:
+
+- first decode the JSON only enough to check the `"type"` field
+- second, according to the value of `"type"`, choose the appropriate variant struct of the sum type and decode into that (`CreateObject`, `UpdateObject`, etc.)
+
+For the other way around, I also defined `MarshalJSON` for the wrapper struct:
+
+```go
+func (a *Action) MarshalJSON() ([]byte, error) {
+	v := a.value
+
+	data, err := json.Marshal(&v)
+	if err != nil {
+		return nil, err
+	}
+
+	var tagged map[string]any
+	if err := json.Unmarshal(data, &tagged); err != nil {
+		return nil, err
+	}
+
+	// note: `go-check-sumtype` linter will catch if we miss a case here
+	switch v.(type) {
+	case *CreateObject:
+		tagged["type"] = ActionType_CreateObject
+	case *UpdateObject:
+		tagged["type"] = ActionType_UpdateObject
+	case *DeleteObject:
+		tagged["type"] = ActionType_DeleteObject
+	case *DeleteAllObjects:
+		tagged["type"] = ActionType_DeleteAllObjects
+	}
+
+	return json.Marshal(&tagged)
+}
+```
+
+In this method we:
+
+- first encode the wrapped interface as JSON (unlike decoding, we can do this because the interface here will be initialized with an underlying concrete type: `CreateObject`, `UpdateObject`, etc.)
+- second, to add the tag in the `"type"` field, we do a roundtrip of: decoding into a `map[string]any`, adding the tag to that map, and re-encoding the map into JSON
+
+Notice that for `UnmarshalJSON` I use the `exhaustive` linter in `UnmarshalJSON` to make sure I handle all possible tags, and for `MarshalJSON` I use the `go-check-sumtype` linter to make sure I handle all possible variant structs. So given I keep the "enum" and "sum type" up-to-date, I will have exhaustiveness checking in both these methods (in addition to other methods or functions, such as `TransformAction` we saw earlier).
+
+That's it! Yes, there is a bit of boilerplate, but if one is doing Go they are already probably ok with a little boilerplate here and there. Also, between AI coding assistants and other codegen tools, the cost of boilerplate can be mitigated. And finally there is that thing we say, "code is read (and maintained) much more often that written"? So I'd argue the added type-safety and catching things and compile-time instead of runtime might be worth the tradeoff.
 
 ## Alternative implementations
 

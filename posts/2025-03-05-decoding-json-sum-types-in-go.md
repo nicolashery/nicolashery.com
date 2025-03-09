@@ -745,5 +745,12 @@ But I found the V language very interesting nonetheless! It finds a sweet spot a
 
 ## Examples in other languages
 
-- if you made it this far
-- link to repo
+If you made it this far, I'll leave you with a link to [this repository](https://github.com/nicolashery/example-tagged-union). It contains the example sum type from this article, along with JSON encoding/decoding (where applicable), implemented in the following languages:
+
+- Go
+- Haskell
+- OpenAPI
+- Protocol Buffers
+- Rust
+- TypeScript
+- V

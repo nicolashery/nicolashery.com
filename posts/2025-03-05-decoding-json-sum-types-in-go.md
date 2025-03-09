@@ -516,20 +516,13 @@ const (
 	ActionType_DeleteAllObjects
 )
 
-// note: `exhaustive` linter will catch if we miss an entry here
-var ActionTypeStringMap = map[ActionType]string{
-	ActionType_CreateObject:     "create_object",
-	ActionType_UpdateObject:     "update_object",
-	ActionType_DeleteObject:     "delete_object",
-	ActionType_DeleteAllObjects: "delete_all_objects",
-}
-
 func (t ActionType) MarshalJSON() ([]byte, error) {
 	// ...
 }
 
 func (t *ActionType) UnmarshalJSON(data []byte) error {
 	// ...
+  // note: this will return an error for any invalid action type string
 }
 
 func (t ActionType) String() string {
@@ -537,7 +530,7 @@ func (t ActionType) String() string {
 }
 ```
 
-I then defined `UnmarshalJSON` for my wrapper struct like so:
+I then defined `UnmarshalJSON` for my `Action` wrapper struct like so:
 
 ```go
 func (a *Action) UnmarshalJSON(data []byte) error {
@@ -619,9 +612,60 @@ That's it! Yes, there is a bit of boilerplate, but if one is doing Go they are a
 
 ## Alternative implementations
 
-- bag of all branches
-- marshall more effectively (without roundtrip)
-- internally tagged vs externally tagged
+Of course, the implementation described above is only _one possible way_ of decoding JSON sum types in Go. Below are a couple alternatives, some of which we've already mentioned.
+
+There is the "bag of all branches" approach ([full example here](https://github.com/nicolashery/example-tagged-union/blob/main/go/alt2/alt2.go)):
+
+```go
+type Action struct {
+	createObject     *CreateObject
+	updateObject     *UpdateObject
+	deleteObject     *DeleteObject
+	deleteAllObjects *DeleteAllObjects
+}
+```
+
+There is the "delayed decoding" approach ([full example here](https://github.com/nicolashery/example-tagged-union/blob/main/go/alt3/alt3.go)):
+
+```go
+type Action struct {
+	payload json.RawMessage
+}
+```
+
+With the "sealed interface" approach I ended up using, I also considered an implementation of `MarshalJSON` that doesn't require a encode/decode roundtrip to add the tag](https://go.dev/doc/effective_go#embedding), at the cost of a bit more boilerplate. It uses [struct embedding](https://gobyexample.com/struct-embedding) instead ([full example here](https://github.com/nicolashery/example-tagged-union/blob/main/go/altjson.go)):
+
+```go
+func (a *Action) MarshalJSON() ([]byte, error) {
+	var data []byte
+	var err error
+
+	switch v := a.value.(type) {
+	case *CreateObject:
+		tagged := struct {
+			Type ActionType `json:"type"`
+			CreateObject
+		}{
+			Type:         ActionType_CreateObject,
+			CreateObject: *v,
+		}
+		data, err = json.Marshal(&tagged)
+	// ...
+	}
+
+	return data, err
+}
+```
+
+Finally, it is worth mentioning that there are different ways to represent sum types in JSON, notably:
+
+- **internally tagged** (the one used in this article): `{"type": "delete_object", "id": "1", "soft_delete": true}`
+- **adjacently tagged**: `{"type": "delete_object", "value": {"id": "1", "soft_delete": true}}`
+- **externally tagged**: `{"delete_object": {"id": "1", "soft_delete": true}}`
+
+The naming is taken from the Rust library [Serde's documentation](https://serde.rs/enum-representations.html), which provides good explanation and examples of each.
+
+All JSON representations are possible with the Go implementation of sum types described in this post (adjacently tagged [full example here](https://github.com/nicolashery/example-tagged-union/blob/main/go/altjson.go)).
 
 ## What Go could have been: V lang?
 

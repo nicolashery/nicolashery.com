@@ -669,9 +669,79 @@ All JSON representations are possible with the Go implementation of sum types de
 
 ## What Go could have been: V lang?
 
-- example in V
-- niche language but very interesting
-- will probably stick to Go for now
+While I was working on this, this little gem appeared in my social news feed: the [V programming language](https://vlang.io/).
+
+I'll let the project's website do its own marketing:
+
+> V is very similar to Go. If you know Go, you already know ≈80% of V.
+>
+> *Source: https://vlang.io/*
+
+And:
+
+> [...] V is very similar to Go, and its domain is similar to Rust's [...]
+>
+> *Source: https://vlang.io/compare*
+
+Wait... The simplicity of Go with enums and sum types? Yes, please!
+
+I tried porting my example to V, and I have to admit it works out very nicely ([full example here](https://github.com/nicolashery/example-tagged-union/blob/main/vlang/main.v)):
+
+```v
+enum ObjectType {
+	user
+	group
+}
+
+struct Object {
+	type ObjectType
+	id   string
+	name string
+}
+
+struct CreateObject {
+	object Object
+}
+
+struct UpdateObject {
+	object Object
+}
+
+struct DeleteObject {
+	id string
+}
+
+struct DeleteAllObjects {}
+
+type Action = CreateObject | UpdateObject | DeleteObject | DeleteAllObjects
+
+fn transform_action(action Action) string {
+	return match action {
+		CreateObject {
+			'create_object ${action.object.type} ${action.object.id} ${action.object.name}'
+		}
+		UpdateObject {
+			'update_object ${action.object.type} ${action.object.id} ${action.object.name}'
+		}
+		DeleteObject {
+			'delete_object ${action.id}'
+		}
+		DeleteAllObjects {
+			'delete_all_objects'
+		}
+	}
+}
+```
+
+The `match` expression of course has exhaustiveness checking. And the `Action` sum type decodes from/encodes to JSON right out-of-the box (with the caveat that, at the time of writing, it uses the adjacently tagged representation with no way of configuring it).
+
+Before getting too excited it is worth noting that V is very much a niche language, and can't be compared to Go's popularity and ecosystem. Our industry works in mysterious ways, who knows why some languages gain immense traction while others don't. Also:
+
+> There are only two kinds of languages: the ones people complain about and the ones nobody uses.
+>
+> **Bjarne Stroustrup, The C++ Programming Language**
+
+But I found the V language very interesting nonetheless! It finds a sweet spot as a gargabe-collected language between Go's simplicity and Rust's powerful type system.
 
 ## Examples in other languages
 

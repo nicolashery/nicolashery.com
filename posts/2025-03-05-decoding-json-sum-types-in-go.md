@@ -42,7 +42,7 @@ I'll leave it as an exercise to the reader to discuss and decide which of these 
 
 ## My first nil pointer panic in Go was due to lack of sum types
 
-Ok, that section title is a bit cheeky and probably not entirely true. But when I figured out what caused the panic in my code, the thought "sum types would've caught this at compile time" _did_ cross my mind. I'm sure the astute reader could find better ways to structure my first implementation, even without sum types. But humour me for the sake of this article.
+Ok, that section title is a bit cheeky and probably not entirely true. But when I figured out what caused the panic in my code, the thought "sum types would've caught this at compile time" _did_ cross my mind. I'm sure the astute reader could find better ways to structure my first implementation, even without sum types. But humor me for the sake of this article.
 
 Let me say it now: This is _not_ one of those "Go should have sum types" post. A lot has already been written on the topic and I don't want to get into the debate (although you'll probably guess where I stand). Let's just assume I want to _emulate_ something like sum types in Go, then:
 
@@ -51,9 +51,9 @@ Let me say it now: This is _not_ one of those "Go should have sum types" post. A
 
 This post is also *not* a criticism of Go. I came across this issue in my first Go project, and I actually enjoyed working with the language. Having shied away from Go for a while (notably because of lack of sum types), I finally gave it a try because it seemed a good fit for this project. The fast compile times, robust standard library, simplicity of the language, and great developer tooling all delivered on their promise.
 
-For the anecdote, the first time I ran `go build` was on the sample codebase from [Alex Edward's  "Let's Go Further" book](https://lets-go-further.alexedwards.net/) (excellent book by the way), and I had to run it again because it was so much faster than what I was used to (*cough* Haskell *cough*), I thought nothing had happened.
+For the anecdote, the first time I ran `go build` was on the sample codebase from [Alex Edward's "Let's Go Further" book](https://lets-go-further.alexedwards.net/) (excellent book by the way), and I had to run it again because it was so much faster than what I was used to (*cough* Haskell *cough*), I thought nothing had happened.
 
-Back to the historical context: I'm feeling very productive with Go on this particular project. The feedback loop is amazing, and I have a working proof-of-concept in just a couple of days. Code seems to just slip from my fingers, everything works on the first try, zero values and pointers do not scare me anymore, I just need to add this last thing and... Then it hits me:
+Back to the historical context: I'm feeling very productive with Go on this particular project. The feedback loop is amazing, and I have a working proof-of-concept in just a couple of days. Code seems to just slip from my fingers, everything works on the first try, zero values and pointers do not scare me anymore, I just need to add this last thing and... then it hits me:
 
 ``` text
 2024/12/07 12:16:53 http: panic serving [::1]:60984:
@@ -138,7 +138,7 @@ Did you see the error? If yes, then you can stop reading now and get back to wor
 
 ## Decoding JSON sum types in Go, take one
 
-How did I get to the code above you might wonder? Well, imagine our service is receiving a JSON payload that looks like this:
+How did I get to the code above, you might wonder? Well, imagine our service is receiving a JSON payload that looks like this:
 
 ```json
 [
@@ -168,7 +168,7 @@ How did I get to the code above you might wonder? Well, imagine our service is r
 ]
 ```
 
-These are all different types of "actions", and this JSON representation is not unreasonable. The [OpenAPI specification](https://swagger.io/specification/#discriminator-object) has a discriminator "pet" example, and the [Redocly documentation](https://redocly.com/learn/openapi/discriminator) a "vehicle" example, that are similar to this. (I have yet to come across an API with pets so appologies my example will be the less fun, but maybe more realistic.)
+These are all different types of "actions", and this JSON representation is not unreasonable. The [OpenAPI specification](https://swagger.io/specification/#discriminator-object) has a discriminator "pet" example, and the [Redocly documentation](https://redocly.com/learn/openapi/discriminator) a "vehicle" example, that are similar to this. (I have yet to come across an API with pets so apologies my example will be the less fun, but maybe more realistic.)
 
 My naive attempt to decode this JSON, because I was in a rush (and maybe also because Copilot suggested it, if I'm being honest), was to create a struct which I call *"bag of all the fields"*. This is a struct with all possible fields for every action type merged, and using pointers. The zero-value of pointers is `nil` which will be set for fields that are "unused" by a particular action type. Here it is in all its glory:
 
@@ -608,11 +608,11 @@ In this method we:
 
 Notice that I use the `exhaustive` linter in `UnmarshalJSON` to make sure I handle all possible tags, and I use the `go-check-sumtype` linter in `MarshalJSON` to make sure I handle all possible variant structs. So given I keep the "enum" and "sum type" up-to-date, I will have exhaustiveness checking in both these methods (in addition to other methods or functions, such as `TransformAction` we saw earlier).
 
-That's it! Yes, there is a bit of boilerplate, but if one is using Go they are probably already OK with a little boilerplate here and there. Also, between AI coding assistants and other codegen tools, the cost of boilerplate can be mitigated. And finally there is that thing we say, "code is read (and maintained) much more often that written"? So I'd argue the added type-safety and the fact that we catch issues and compile-time instead of runtime may be worth the tradeoff.
+That's it! Yes, there is a bit of boilerplate, but if one is using Go they are probably already OK with a little boilerplate here and there. Also, between AI coding assistants and other codegen tools, the cost of boilerplate can be mitigated. And finally there is that thing we say, "code is read (and maintained) much more often than written"? So I'd argue the added type-safety and the fact that we catch issues at compile time instead of runtime may be worth the tradeoff.
 
 ## Alternative implementations
 
-Of course the implementation described above is only _one possible way_ of decoding JSON sum types in Go. Below are a couple alternatives, some of which we've already mentioned.
+Of course, the implementation described above is only _one possible way_ of decoding JSON sum types in Go. Below are a couple alternatives, some of which we've already mentioned.
 
 There is the "bag of all branches" approach ([full example here](https://github.com/nicolashery/example-tagged-union/blob/main/go/alt2/alt2.go)):
 

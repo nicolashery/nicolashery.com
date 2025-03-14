@@ -6,13 +6,13 @@ description: The Go programming language doesn't have native support for sum typ
 
 [[TOC]]
 
-## Whether we find them useful or not, sum types are here to stay
+## Whether we find them useful or not, sum types exist
 
-Sum types (aka [tagged unions](https://zig.guide/language-basics/unions/), [discriminated unions](https://www.typescriptlang.org/docs/handbook/2/narrowing.html#discriminated-unions), [variants](https://ocaml.org/docs/basic-data-types#variants), or sometimes [enums](https://doc.rust-lang.org/book/ch06-00-enums.html)) are unavoidable as a software developer. Unless you live under a rock desperatly holding on to a single programming language that happens not to have them of course.
+Sum types (aka [tagged unions](https://zig.guide/language-basics/unions/), [discriminated unions](https://www.typescriptlang.org/docs/handbook/2/narrowing.html#discriminated-unions), [variants](https://ocaml.org/docs/basic-data-types#variants), or sometimes [enums](https://doc.rust-lang.org/book/ch06-00-enums.html)) are unavoidable as a software developer. Unless you've been living under a rock, you're bound to have come across them at some point.
 
-Many languages support sum types natively: [Zig](https://zig.guide/language-basics/unions/), [TypeScript](https://www.typescriptlang.org/docs/handbook/2/narrowing.html#discriminated-unions), [OCaml](https://ocaml.org/docs/basic-data-types#variants), [Rust](https://doc.rust-lang.org/book/ch06-00-enums.html), just to name a few. And even [OpenAPI has them](https://swagger.io/specification/#discriminator-object), the de-facto standard and language-agnostic way to define HTTP APIs using JSON. So even if the particular programming your using right now doesn't natively support sum types, you may have to handle a JSON payload over the wire that is modelled as one. And you'll have to decide how you want to decode that.
+Many languages support sum types natively: [Zig](https://zig.guide/language-basics/unions/), [TypeScript](https://www.typescriptlang.org/docs/handbook/2/narrowing.html#discriminated-unions), [OCaml](https://ocaml.org/docs/basic-data-types#variants), [Rust](https://doc.rust-lang.org/book/ch06-00-enums.html), just to name a few. Even [OpenAPI has them](https://swagger.io/specification/#discriminator-object), the de-facto standard and language-agnostic way to define HTTP APIs using JSON. So even if the particular programming language you're using right now doesn't natively support sum types, you may have to handle a JSON payload over the wire that is modelled as one. And you'll have to decide how you want to decode that.
 
-Personal feelings about sum types aside, I think most people would agree they are not a terrible way to model a data structure that can be *"one of these (potentially very different) things, and nothing else"*. And once you've used sum types in a match/**switch statement**/expression combined with **exhaustiveness checking**, well I find it's hard to go back.
+Personal feelings about sum types aside, I think most people would agree they are not a terrible way to model a data structure that can be *"one of these (potentially very different) things, and nothing else"*. And once you've used sum types in a **switch statement** or match expression combined with **exhaustiveness checking**, well, I find it's hard to go back.
 
 Let's take a primitive type, a boolean or `bool` in Rust. It has 2 possible values: `true` or `false` (also called "cardinality"). A struct or record is called a **"product type"** because you can count the number of possible values (or cardinality) by *multiplying* the number of possible values of each field. So if I have a struct with 2 boolean fields (example here in Rust):
 
@@ -25,7 +25,7 @@ struct UserStatus {
 
 The number of possible values for this struct (or "product type") is: 2x2 = **4**.
 
-Now I didn't choose this example struct completely at random. Some of the possible values are not valid in this particular domain: a user can't be *subscribed* if they are not *signed up* as well. You'll also hear the phrase "make illegal states unrepresentable" when talking about sum types.
+Now I didn't choose this struct example completely at random. Some of the possible values are not valid in this particular domain: a user can't be *subscribed* if they are not *signed up* as well. You'll also hear the phrase "make illegal states unrepresentable" when talking about sum types.
 
 A **"sum type"** is called that way because... you guessed it. You can count the number of possible values (or cardinality) by *summing* the number of possible values of each branch. So if I have the following sum type (example still in Rust, where they are called "enums"):
 
@@ -47,13 +47,13 @@ Ok, that section title is a bit cheeky and probably not entirely true. But when 
 Let me say it now: This is _not_ one of those "Go should have sum types" post. A lot has already been written on the topic and I don't want to get into the debate (although you'll probably guess where I stand). Let's just assume I want to _emulate_ something like sum types in Go, then:
 
 1. How do I do so without straying too far from what's idiomatic in the language?
-2. How do I encode and decode it to and from JSON with the structure we'll see below?
+2. How do I encode and decode it, to and from JSON, with the structure we'll see below?
 
-This is also not a criticism of Go. This was my first Go project, and I actually enjoyed working with the language. Having shied away from it for a while (notably because of lack of sum types), I finally gave it a try because it seemed a good fit for this project. The fast compile times, robust standard library, simplicity of the language, and great developer tooling all delivered on their promise.
+This post is also *not* a criticism of Go. I came across this issue in my first Go project, and I actually enjoyed working with the language. Having shied away from Go for a while (notably because of lack of sum types), I finally gave it a try because it seemed a good fit for this project. The fast compile times, robust standard library, simplicity of the language, and great developer tooling all delivered on their promise.
 
 For the anecdote, the first time I ran `go build` was on the sample codebase from [Alex Edward's  "Let's Go Further" book](https://lets-go-further.alexedwards.net/) (excellent book by the way), and I had to run it again because it was so much faster than what I was used to (*cough* Haskell *cough*), I thought nothing had happened.
 
-So, I'm feeling very productive on this project. The feedback loop is amazing, I have a working proof of concept in just a couple of days, I'm coding away like there's no tomorrow, zero values and pointers do not scare me, just need to add this last thing and... Then it hits me:
+Back to the historical context: I'm feeling very productive with Go on this particular project. The feedback loop is amazing, and I have a working proof-of-concept in just a couple of days. Code seems to just slip from my fingers, everything works on the first try, zero values and pointers do not scare me anymore, I just need to add this last thing and... Then it hits me:
 
 ``` text
 2024/12/07 12:16:53 http: panic serving [::1]:60984:
@@ -70,7 +70,7 @@ example/main.(*Server).handleTransformActions(0x140001cad80, {0x100ad6358, 0x140
 [...]
 ```
 
-Ouch. Having done a lot of Haskell and (strict) TypeScript recently, I had forgotten a bit about such runtime errors. But I don't panic, and I carefully look at the code mentioned in the stack trace.
+Ouch. Having done a lot of Haskell and (strict) TypeScript recently, I had forgotten one could get such runtime errors. But I don't panic (pun intended), and I carefully look at the code mentioned in the stack trace.
 
 Below is a simplified version of the code for the sake of this article (the actual implementation had bigger structures and more cases). Can you spot the error? You have 5 seconds.
 
@@ -134,7 +134,7 @@ func NewActionDeleteAllObjects() Action {
 }
 ```
 
-Did you see the error? I yes, then you can stop reading now and get back to work. I'm joking. Didn't see it in the allowed time limit? Don't worry, the Go type checker couldn't either.
+Did you see the error? If yes, then you can stop reading now and get back to work. I'm joking. Didn't see it in the allowed time limit? Don't worry, the Go type checker couldn't either.
 
 ## Decoding JSON sum types in Go, take one
 
@@ -168,7 +168,7 @@ How did I get to the code above you might wonder? Well, imagine our service is r
 ]
 ```
 
-These are all different types of "actions", and this JSON representation is not unreasonable. The [OpenAPI specification](https://swagger.io/specification/#discriminator-object) has a discriminator "pet" example, and the [Redocly documentation](https://redocly.com/learn/openapi/discriminator) a "vehicle" example, that are similar to this. (I have yet to come across an API with pets so my example will be the less fun "actions", appologies.)
+These are all different types of "actions", and this JSON representation is not unreasonable. The [OpenAPI specification](https://swagger.io/specification/#discriminator-object) has a discriminator "pet" example, and the [Redocly documentation](https://redocly.com/learn/openapi/discriminator) a "vehicle" example, that are similar to this. (I have yet to come across an API with pets so appologies my example will be the less fun, but maybe more realistic.)
 
 My naive attempt to decode this JSON, because I was in a rush (and maybe also because Copilot suggested it, if I'm being honest), was to create a struct which I call *"bag of all the fields"*. This is a struct with all possible fields for every action type merged, and using pointers. The zero-value of pointers is `nil` which will be set for fields that are "unused" by a particular action type. Here it is in all its glory:
 
@@ -198,7 +198,7 @@ if err := json.Unmarshal(data, &actions); err != nil {
 }
 ```
 
-We can of course also go the other way and call `json.Marshal` to encode into the same JSON representation as the snippet above. The `omitempty` struct tag option will remove fields unused by each action type from the resulting JSON.
+We can also go the other way and call `json.Marshal` to encode the struct into the same JSON representation as the snippet above. The `omitempty` struct tag option will remove fields unused by each action type from the resulting JSON.
 
 So we're off to the races, what can go wrong with a bag of pointers? Subtle bugs when trying to access a field that is `nil` because unused by that action type, that's what:
 
@@ -223,7 +223,7 @@ case ActionType_DeleteAllObjects:
 
 ## How do OpenAPI and Protobuf handle this?
 
-I pick myself up after this runtime panic, and have the following genius idea: There are code generators for OpenAPI, if I give them the specification for the JSON discriminated union above, what do they output for Go? Also, [Protocol Buffers](http://protobuf.dev/) is a popular wire format that is based on code generation, and the [Oneof field](https://protobuf.dev/programming-guides/editions/#oneof) looks a lot like a sum type, so what do they generate for Go?
+I pick myself up after this runtime panic, and have the following genius idea: There are code generators for OpenAPI, if I give them the specification for the [JSON discriminated union](https://swagger.io/specification/#discriminator-object) above, what do they output for Go? Also, [Protocol Buffers](http://protobuf.dev/) is a popular wire format that is based on code generation, and the [Oneof field](https://protobuf.dev/programming-guides/editions/#oneof) looks a lot like a sum type, so what do *they* generate for Go?
 
 The OpenAPI schema for an action would look like this:
 
@@ -302,7 +302,7 @@ func (a *Action) UnmarshalJSON(data []byte) error {
 }
 ```
 
-To get to the actual underlying value, the generator creates a method (which I'll name `Value()` here) that returns the first non-nil pointer:
+To get the actual underlying value, the generator creates a method (which I'll name `Value()` here) that returns the first non-nil pointer:
 
 ```go
 func (a *Action) Value() any {
@@ -356,9 +356,9 @@ func TransformAction(action *Action) string {
 Some issues remain though:
 
 - I "trust" the `any` return value of the accessor method to be one of the action structs (`CreateObject`, `UpdateObject`, etc.) and nothing else
-- If I add a "branch" (i.e. another action type), I can forget to update the `switch` statement in `TransformAction`
+- If I add a "branch" (i.e. another action type), I can easily forget to update the `switch` statement in `TransformAction`
 
-There is another generator [oapi-codegen](https://github.com/oapi-codegen/oapi-codegen) that I tried out. I has a slight twist in that it holds on to a `json.RawMessage` and delays the decoding until we call an equivalent of the `action.Value()` accessor method:
+Another generator that I tried out, [oapi-codegen](https://github.com/oapi-codegen/oapi-codegen), uses a slightly different approach. It holds on to a `json.RawMessage` and delays the decoding until we call an equivalent of the `action.Value()` accessor method:
 
 ```go
 type Action struct {
@@ -381,11 +381,11 @@ The decoding works essentially the same, first decode enough to check the `"type
 
 Since delaying JSON decoding wasn't particularly useful in my case, I didn't choose this route. But I wanted to mention it for completeness' sake.
 
-What about **Protocol Buffers** (aka "Protobuf")? They were interesting to me because I spotted this in the [Go generated code guide](https://pkg.go.dev/encoding/json#example-RawMessage-Unmarshal):
+What about **Protocol Buffers** (aka "Protobuf")? I found the following particularly interesting in their [Go generated code guide](https://pkg.go.dev/encoding/json#example-RawMessage-Unmarshal):
 
 > For a oneof field, the protobuf compiler generates a single field with an interface type `isMessageName_MyField`. It also generates a struct for each of the singular fields within the oneof. These all implement this `isMessageName_MyField` interface.
 
-Even though we're working with a JSON API, a Protobuf definition for our data model could look like this:
+Let's try it out. Even though we're working with a JSON API, a Protobuf definition for our data model could look like this:
 
 ```protobuf
 message Action {
@@ -404,7 +404,7 @@ message CreateObject {
 // ...
 ```
 
-The generated code indeed creates an interface `isAction_Value` with a single method, and an `Action` struct that holds a field of that interface.
+The generated code indeed creates an interface `isAction_Value` with a single method, as well as an `Action` struct that holds a field with that interface type:
 
 ```go
 type Action struct {
@@ -435,7 +435,7 @@ After a bit of searching on the topic of "Go sum types", I stumbled across this:
 
 This "interface with an unexported method" (also called "sealed interface", or "marker interface") sounded like a reasonable way to do it. And it's also what the Protobuf codegen seems to be using.
 
-I replaced my single "bag of all the fields"  struct with a sealed interface `IsAction` and a struct for each variant that implements the interface (`CreateObject`, `UpdateObject`, etc.):
+I replaced my single "bag of all the fields"  struct with a sealed interface `IsAction` and a struct for each variant (`CreateObject`, `UpdateObject`, etc.). Each variant struct implements the interface:
 
 ```go
 //sumtype:decl
@@ -467,7 +467,7 @@ type DeleteAllObjects struct{}
 func (*DeleteAllObjects) isAction() {}
 ```
 
-Now I am quite pleased. Not only do these structs for each action type provide more type-safety, but if I forget to handle a variant in my `switch` statement (or if I add a new variant), the `go-check-sumtype` linter will catch it instead of getting an error at runtime!
+Now I am quite pleased. Not only do these action-specific structs provide more type-safety, but if I forget to handle a variant in my `switch` statement (or if I add a new one that implements the sealed interface), the `go-check-sumtype` linter will catch it instead of getting an error at runtime!
 
 ```go
 func TransformAction(action *Action) string {
@@ -566,8 +566,8 @@ func (a *Action) UnmarshalJSON(data []byte) error {
 
 This works similarly to what we saw in the OpenAPI generated code:
 
-- first decode the JSON only enough to check the `"type"` field
-- second, according to the value of `"type"`, choose the appropriate variant struct of the sum type and decode into that (`CreateObject`, `UpdateObject`, etc.)
+- first decode only what is needed in the JSON to check the `"type"` field
+- second, according to the value of `"type"`, choose the appropriate variant struct of the sum type (`CreateObject`, `UpdateObject`, etc.) and use it to decode the JSON payload
 
 For the other way around, I also defined `MarshalJSON` for the wrapper struct:
 
@@ -604,15 +604,15 @@ func (a *Action) MarshalJSON() ([]byte, error) {
 In this method we:
 
 - first encode the wrapped interface as JSON (unlike decoding, we can do this because the interface here will be initialized with an underlying concrete type: `CreateObject`, `UpdateObject`, etc.)
-- second, to add the tag in the `"type"` field, we do a roundtrip of: decoding into a `map[string]any`, adding the tag to that map, and re-encoding the map into JSON
+- second, to add the tag in the `"type"` field, we do a roundtrip: decode into a `map[string]any`, add the tag to that map, and re-encode the map into JSON
 
-Notice that for `UnmarshalJSON` I use the `exhaustive` linter in `UnmarshalJSON` to make sure I handle all possible tags, and for `MarshalJSON` I use the `go-check-sumtype` linter to make sure I handle all possible variant structs. So given I keep the "enum" and "sum type" up-to-date, I will have exhaustiveness checking in both these methods (in addition to other methods or functions, such as `TransformAction` we saw earlier).
+Notice that I use the `exhaustive` linter in `UnmarshalJSON` to make sure I handle all possible tags, and I use the `go-check-sumtype` linter in `MarshalJSON` to make sure I handle all possible variant structs. So given I keep the "enum" and "sum type" up-to-date, I will have exhaustiveness checking in both these methods (in addition to other methods or functions, such as `TransformAction` we saw earlier).
 
-That's it! Yes, there is a bit of boilerplate, but if one is doing Go they are already probably ok with a little boilerplate here and there. Also, between AI coding assistants and other codegen tools, the cost of boilerplate can be mitigated. And finally there is that thing we say, "code is read (and maintained) much more often that written"? So I'd argue the added type-safety and catching things and compile-time instead of runtime might be worth the tradeoff.
+That's it! Yes, there is a bit of boilerplate, but if one is using Go they are probably already OK with a little boilerplate here and there. Also, between AI coding assistants and other codegen tools, the cost of boilerplate can be mitigated. And finally there is that thing we say, "code is read (and maintained) much more often that written"? So I'd argue the added type-safety and the fact that we catch issues and compile-time instead of runtime may be worth the tradeoff.
 
 ## Alternative implementations
 
-Of course, the implementation described above is only _one possible way_ of decoding JSON sum types in Go. Below are a couple alternatives, some of which we've already mentioned.
+Of course the implementation described above is only _one possible way_ of decoding JSON sum types in Go. Below are a couple alternatives, some of which we've already mentioned.
 
 There is the "bag of all branches" approach ([full example here](https://github.com/nicolashery/example-tagged-union/blob/main/go/alt2/alt2.go)):
 
@@ -633,7 +633,7 @@ type Action struct {
 }
 ```
 
-With the "sealed interface" approach I ended up using, I also considered an implementation of `MarshalJSON` that doesn't require a encode/decode roundtrip to add the tag](https://go.dev/doc/effective_go#embedding), at the cost of a bit more boilerplate. It uses [struct embedding](https://gobyexample.com/struct-embedding) instead ([full example here](https://github.com/nicolashery/example-tagged-union/blob/main/go/altjson.go)):
+With the "sealed interface" approach I ended up using, I also considered an implementation of `MarshalJSON` that doesn't require an encode/decode roundtrip to add the tag, at the cost of a bit more boilerplate. It uses [struct embedding](https://gobyexample.com/struct-embedding) instead ([full example here](https://github.com/nicolashery/example-tagged-union/blob/main/go/altjson.go)):
 
 ```go
 func (a *Action) MarshalJSON() ([]byte, error) {
@@ -663,9 +663,9 @@ Finally, it is worth mentioning that there are different ways to represent sum t
 - **adjacently tagged**: `{"type": "delete_object", "value": {"id": "1", "soft_delete": true}}`
 - **externally tagged**: `{"delete_object": {"id": "1", "soft_delete": true}}`
 
-The naming is taken from the Rust library [Serde's documentation](https://serde.rs/enum-representations.html), which provides good explanation and examples of each.
+The naming is taken from the Rust library [Serde's documentation](https://serde.rs/enum-representations.html), which provides a good explanation and examples for each representation.
 
-All JSON representations are possible with the Go implementation of sum types described in this post (adjacently tagged [full example here](https://github.com/nicolashery/example-tagged-union/blob/main/go/altjson.go)).
+All JSON representations are possible with the Go implementation of sum types described in this post (you can find the adjacently tagged [full example here](https://github.com/nicolashery/example-tagged-union/blob/main/go/altjson.go)).
 
 ## What Go could have been: V lang?
 
@@ -683,9 +683,9 @@ And:
 >
 > *Source: https://vlang.io/compare*
 
-Wait... The simplicity of Go with enums and sum types? Yes, please!
+Wait... The simplicity of Go, but with enums and sum types? Yes, please!
 
-I tried porting my example to V, and I have to admit it works out very nicely ([full example here](https://github.com/nicolashery/example-tagged-union/blob/main/vlang/main.v)):
+I tried porting my example to V, and I have to admit it works out quite nicely ([full source here](https://github.com/nicolashery/example-tagged-union/blob/main/vlang/main.v)):
 
 ```v
 enum ObjectType {
@@ -733,19 +733,19 @@ fn transform_action(action Action) string {
 }
 ```
 
-The `match` expression of course has exhaustiveness checking. And the `Action` sum type decodes from/encodes to JSON right out-of-the box (with the caveat that, at the time of writing, it uses the adjacently tagged representation with no way of configuring it).
+The `match` expression has exhaustiveness checking, of course. And the `Action` sum type decodes from/encodes to JSON right out-of-the box (with the caveat that, at the time of writing, it uses the adjacently tagged representation with no way of configuring it).
 
-Before getting too excited it is worth noting that V is very much a niche language, and can't be compared to Go's popularity and ecosystem. Our industry works in mysterious ways, who knows why some languages gain immense traction while others don't. Also:
+Before getting too excited it is worth noting that V is very much a niche language, and can't be compared to Go's popularity and ecosystem. Our industry works in mysterious ways, who knows why some languages gain traction while others don't. Also, this might have some truth to it:
 
 > There are only two kinds of languages: the ones people complain about and the ones nobody uses.
 >
 > **Bjarne Stroustrup, The C++ Programming Language**
 
-But I found the V language very interesting nonetheless! It finds a sweet spot as a gargabe-collected language between Go's simplicity and Rust's powerful type system.
+Nevertheless, I found the V language interesting! It's a garbage-collected language that seems to have found a sweet spot between Go's simplicity and Rust's powerful type system.
 
 ## Examples in other languages
 
-If you made it this far, I'll leave you with a link to [this repository](https://github.com/nicolashery/example-tagged-union). It contains the example sum type from this article, along with JSON encoding/decoding (where applicable), implemented in the following languages:
+If you made it this far, I'll leave you with a link to [this repository](https://github.com/nicolashery/example-tagged-union). It contains an implementation of the example sum type from this article, with JSON encoding/decoding (where applicable), in the following languages:
 
 - Go
 - Haskell

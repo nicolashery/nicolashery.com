@@ -194,7 +194,7 @@ This works because `json.Unmarshal` doesn't care if there are missing fields in 
 ```go
 actions := []Action{}
 if err := json.Unmarshal(data, &actions); err != nil {
-  return err
+	return err
 }
 ```
 
@@ -205,19 +205,20 @@ So we're off to the races, what can go wrong with a bag of pointers? Subtle bugs
 ```go
 switch a.Type {
 case ActionType_CreateObject:
-  result = fmt.Sprintf(
-    "create_object %s %s %s", a.Object.Type, a.Object.ID, a.Object.Name,
-  )
+	result = fmt.Sprintf(
+		"create_object %s %s %s", a.Object.Type, a.Object.ID, a.Object.Name,
+	)
 case ActionType_UpdateObject:
-  result = fmt.Sprintf(
-    "update_object %s %s %s", a.Object.Type, a.Object.ID, a.Object.Name,
-  )
+	result = fmt.Sprintf(
+		"update_object %s %s %s", a.Object.Type, a.Object.ID, a.Object.Name,
+	)
 case ActionType_DeleteObject:
-  result = fmt.Sprintf("delete_object %s", a.Object.ID) // <- the bug was here!
-  // for this action type `a.Object` is `nil`
-  // the correct code should be: `*a.ID`
+	// the bug was here!
+	// for this action type `a.Object` is `nil`
+	// the correct code should be: `*a.ID`
+	result = fmt.Sprintf("delete_object %s", a.Object.ID)
 case ActionType_DeleteAllObjects:
-  result = "delete_all_objects"
+	result = "delete_all_objects"
 }
 ```
 
@@ -342,9 +343,10 @@ func TransformAction(action *Action) string {
 			"update_object %s %s %s", v.Object.Type, v.Object.ID, v.Object.Name,
 		)
 	case *DeleteObject:
-		result = fmt.Sprintf("delete_object %s", v.ID) // <- can't make the same mistake here!
+		// can't make the same mistake here!
 		// trying to do `v.Object.ID` will cause a compiler error:
 		// "type *DeleteObject has no field or method Object"
+		result = fmt.Sprintf("delete_object %s", v.ID)
 	case *DeleteAllObjects:
 		result = "delete_all_objects"
 	}
@@ -373,7 +375,7 @@ type CreateObject struct {
 // ...
 
 func (a *Action) Value() (any, err) {
-  // JSON decoding happens here now
+	// JSON decoding happens here now
 }
 ```
 
@@ -473,9 +475,10 @@ Now I am quite pleased. Not only do these action-specific structs provide more t
 func TransformAction(action *Action) string {
 	var result string
 
-	switch v := action.Value().(type) { // <- if we miss a case here, `go-check-sumtype` will catch it!
+	// if we miss a case here, `go-check-sumtype` will catch it!
 	// for example, omitting `case *DeleteAllObjects` will cause a linter error:
 	// "exhaustiveness check failed for sum type IsAction: missing cases for DeleteAllObjects"
+	switch v := action.Value().(type) {
 	case *CreateObject:
 		result = fmt.Sprintf(
 			"create_object %s %s %s", v.Object.Type, v.Object.ID, v.Object.Name,
@@ -485,9 +488,10 @@ func TransformAction(action *Action) string {
 			"update_object %s %s %s", v.Object.Type, v.Object.ID, v.Object.Name,
 		)
 	case *DeleteObject:
-		result = fmt.Sprintf("delete_object %s", v.ID) // <- better type-safety for each branch!
+		// better type-safety for each branch!
 		// for example, trying to do `v.Object.ID` will cause a compiler error:
 		// "type *DeleteObject has no field or method Object"
+		result = fmt.Sprintf("delete_object %s", v.ID)
 	case *DeleteAllObjects:
 		result = "delete_all_objects"
 	}
@@ -522,7 +526,7 @@ func (t ActionType) MarshalJSON() ([]byte, error) {
 
 func (t *ActionType) UnmarshalJSON(data []byte) error {
 	// ...
-  // note: this will return an error for any invalid action type string
+	// note: this will return an error for any invalid action type string
 }
 
 func (t ActionType) String() string {

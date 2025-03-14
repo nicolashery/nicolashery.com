@@ -679,13 +679,13 @@ I'll let the project's website do its own marketing:
 
 > V is very similar to Go. If you know Go, you already know ≈80% of V.
 >
-> *Source: https://vlang.io/*
+> *Source: [vlang.io](https://vlang.io)*
 
 And:
 
 > [...] V is very similar to Go, and its domain is similar to Rust's [...]
 >
-> *Source: https://vlang.io/compare*
+> *Source: [vlang.io/compare](https://vlang.io/compare)*
 
 Wait... The simplicity of Go, but with enums and sum types? Yes, please!
 

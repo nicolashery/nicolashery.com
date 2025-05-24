@@ -100,85 +100,81 @@ education:
       - "Selected coursework: Probability and Statistics, Calculus, Economics, International Strategy"
 skills:
   - category: Languages
-    content: Go, TypeScript, Haskell, Rust
+    content: Go, TypeScript, Python
   - category: Technologies
     content: PostgreSQL, RabbitMQ, Redis, Kubernetes
 ---
 
 <!DOCTYPE html>
 <html>
+  <head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
 
-<head>
-  <meta charset="utf-8">
-  <meta http-equiv="X-UA-Compatible" content="IE=edge">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{{ name }}</title>
 
-  <title>{{ name }}</title>
+    {% include "resume-style.html" %}
+  </head>
 
-  {% include "resume-style.html" %}
-</head>
-
-<body>
-  <div class="header">
-    <h1>{{ name }}</h1>
-    <div class="contact">
-      <div>{{ location }}</div>
-      <div>{{ email }}</div>
-      <div>{{ website }}</div>
+  <body>
+    <div class="header">
+      <h1>{{ name }}</h1>
+      <div class="contact">
+        <div>{{ location }}</div>
+        <div>{{ email }}</div>
+        <div>{{ website }}</div>
+      </div>
     </div>
-  </div>
 
-  <div class="intro">
-    {{ intro }}
-  </div>
+    <div class="intro">{{ intro }}</div>
 
-  <h2>Experience</h2>
-  {% for entry in experience %}
-  <div class="row">
-    <div class="left">
-      <div>{{ entry.start }}<span class="sep-lg"> -</span></div>
-      <div class="sep-sm">-</div>
-      <div>{{ entry.end }}</div>
+    <h2>Experience</h2>
+    {% for entry in experience %}
+    <div class="row">
+      <div class="left">
+        <div>{{ entry.start }}<span class="sep-lg"> -</span></div>
+        <div class="sep-sm">-</div>
+        <div>{{ entry.end }}</div>
+      </div>
+      <div class="right">
+        <h3>{{ entry.title }}</h3>
+        <h4>{{ entry.location }}</h4>
+        <ul>
+          {% for item in entry.items %}
+          <li>{{ item }}</li>
+          {% endfor %}
+        </ul>
+      </div>
     </div>
-    <div class="right">
-      <h3>{{ entry.title }}</h3>
-      <h4>{{ entry.location }}</h4>
-      <ul>
-        {% for item in entry.items %}
-        <li>{{ item }}</li>
-        {% endfor %}
-      </ul>
-    </div>
-  </div>
-  {% endfor %}
+    {% endfor %}
 
-  <h2>Education</h2>
-  {% for entry in education %}
-  <div class="row">
-    <div class="left">
-      <div>{{ entry.start }}<span class="sep-lg"> -</span></div>
-      <div class="sep-sm">-</div>
-      <div>{{ entry.end }}</div>
+    <h2>Education</h2>
+    {% for entry in education %}
+    <div class="row">
+      <div class="left">
+        <div>{{ entry.start }}<span class="sep-lg"> -</span></div>
+        <div class="sep-sm">-</div>
+        <div>{{ entry.end }}</div>
+      </div>
+      <div class="right">
+        <h3>{{ entry.school }}</h3>
+        <h4>{{ entry.degree }}, {{ entry.location }}</h4>
+        <ul>
+          {% for item in entry.items %}
+          <li>{{ item }}</li>
+          {% endfor %}
+        </ul>
+      </div>
     </div>
-    <div class="right">
-      <h3>{{ entry.school }}</h3>
-      <h4>{{ entry.degree }}, {{ entry.location }}</h4>
-      <ul>
-        {% for item in entry.items %}
-        <li>{{ item }}</li>
-        {% endfor %}
-      </ul>
+    {% endfor %}
+
+    <h2>Skills</h2>
+    {% for entry in skills %}
+    <div class="row">
+      <div class="left">{{ entry.category }}</div>
+      <div class="right">{{ entry.content }}</div>
     </div>
-  </div>
-  {% endfor %}
-
-  <h2>Skills</h2>
-  {% for entry in skills %}
-  <div class="row">
-    <div class="left">{{ entry.category }}</div>
-    <div class="right">{{ entry.content }}</div>
-  </div>
-  {% endfor %}
-</body>
-
+    {% endfor %}
+  </body>
 </html>

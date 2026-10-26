@@ -1,5 +1,5 @@
 import syntaxHighlight from "@11ty/eleventy-plugin-syntaxhighlight";
-import pluginRss from "@11ty/eleventy-plugin-rss";
+import { feedPlugin } from "@11ty/eleventy-plugin-rss";
 import markdownItAnchor from "markdown-it-anchor";
 import markdownItTableOfContents from "markdown-it-table-of-contents";
 
@@ -15,7 +15,24 @@ export default function (eleventyConfig) {
   eleventyConfig.addPassthroughCopy("robots.txt");
 
   eleventyConfig.addPlugin(syntaxHighlight);
-  eleventyConfig.addPlugin(pluginRss);
+
+  eleventyConfig.addPlugin(feedPlugin, {
+    type: "atom",
+    outputPath: "/feed.xml",
+    collection: {
+      name: "posts",
+      limit: 0,
+    },
+    metadata: {
+      language: "en",
+      title: site.title,
+      subtitle: site.description,
+      base: site.url,
+      author: {
+        name: site.author,
+      },
+    },
+  });
 
   eleventyConfig.addShortcode("image", imageShortcode);
   eleventyConfig.addShortcode(

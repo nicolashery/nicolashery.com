@@ -37,6 +37,18 @@ To only build the site, run:
 npm run build
 ```
 
+For the production build:
+
+```
+npm run build-production
+```
+
+Test the built site locally before publishing:
+
+```
+python3 -m http.server 8000 --directory _site
+```
+
 ## License
 
 The content in this website, i.e. all images, text, and other assets, included

@@ -1,5 +1,5 @@
-const seo = require("../lib/seo.computed");
+import seo from "../lib/seo.computed.js";
 
-module.exports = {
+export default {
   seo: seo,
 };

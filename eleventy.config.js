@@ -1,14 +1,14 @@
-const syntaxHighlight = require("@11ty/eleventy-plugin-syntaxhighlight");
-const pluginRss = require("@11ty/eleventy-plugin-rss");
-const markdownItAnchor = require("markdown-it-anchor");
-const markdownItTableOfContents = require("markdown-it-table-of-contents");
+import syntaxHighlight from "@11ty/eleventy-plugin-syntaxhighlight";
+import pluginRss from "@11ty/eleventy-plugin-rss";
+import markdownItAnchor from "markdown-it-anchor";
+import markdownItTableOfContents from "markdown-it-table-of-contents";
 
-const imageShortcode = require("./lib/image.shortcode");
-const cloudinaryImageShortcode = require("./lib/cloudinaryImage.shortcode");
+import imageShortcode from "./lib/image.shortcode.js";
+import cloudinaryImageShortcode from "./lib/cloudinaryImage.shortcode.js";
 
-const site = require("./_data/site.json");
+import site from "./_data/site.json" with { type: "json" };
 
-module.exports = function (eleventyConfig) {
+export default function (eleventyConfig) {
   eleventyConfig.addPassthroughCopy("css");
   eleventyConfig.addPassthroughCopy("img");
   eleventyConfig.addPassthroughCopy("keybase.txt");
@@ -44,4 +44,4 @@ module.exports = function (eleventyConfig) {
       layouts: "_layouts",
     },
   };
-};
+}

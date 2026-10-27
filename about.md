@@ -11,7 +11,7 @@ image:
   {% cloudinaryImage "nicolas-hery-square.jpg" "Profile picture" "" "c_scale,w_400" %}
 </div>
 
-I'm a software engineer and engineering manager, with 12+ years of experience working on web applications that solve real business problems and offer a delightful user experience. I've worked in a variety of industries, such as Cybersecurity ([SimSpace](https://www.simspace.com/)), Travel E-Commerce ([Busbud](https://www.busbud.com/)), Healthcare ([Tidepool](https://www.tidepool.org/)), and Online Grocery ([FreshDirect](https://www.freshdirect.com/)).
+I'm a software engineer and engineering manager, with 10+ years of experience working on web applications that solve real business problems and offer a delightful user experience. I've worked in a variety of industries, such as Cybersecurity ([SimSpace](https://www.simspace.com/)), Travel E-Commerce ([Busbud](https://www.busbud.com/)), Healthcare ([Tidepool](https://www.tidepool.org/)), and Online Grocery ([FreshDirect](https://www.freshdirect.com/)).
 
 As a software engineer, I work full-stack both on the backend and frontend parts of a solution. I also have some experience with UX and product work. I focus on creating maintainable software, that can grow as companies grow and teams change. Some ways I've achieved this are: striving for simplicity, implementing team conventions, managing dependencies, fostering a culture of documentation, improving developer onboarding, leveraging static types and other static analysis tools.
 

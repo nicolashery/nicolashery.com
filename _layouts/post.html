@@ -4,7 +4,14 @@ layout: default
 
 <article class="post">
   <h1 class="post-title">{{ title }}</h1>
-  <div class="post-date">{{ page.date | date: "%d %B, %Y" }}</div>
+  <div class="post-subheading">
+    <div class="post-subheading-row">
+      <p>{{ page.date | date: "%d %B, %Y" }}</p>
+      <p>
+        Written by a <strong>human</strong>, see <a href="/ai">AI policy</a>
+      </p>
+    </div>
+  </div>
   <p><em>{{ description }}</em></p>
   {{ content }}
 </article>

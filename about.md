@@ -19,6 +19,10 @@ As an engineering manager, my focus has been on creating high-performing and emp
 
 From a technical perspective, I consider myself a polyglot and have worked in enough programming languages that I feel comfortable learning a new one for a particular task or team. I have a strong inclination for [static type checking](https://en.wikipedia.org/wiki/Type_system#Static_type_checking). Most recently I've used [Go](https://go.dev/), [TypeScript](https://www.typescriptlang.org/), [Python](https://www.python.org/).
 
+## AI policy
+
+All content on this site is written by a human, me. See [AI policy](/ai) for more details.
+
 ## Keep in touch
 
 - [X/Twitter](https://x.com/nicolas_hery)

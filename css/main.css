@@ -360,10 +360,35 @@ figure img {
   margin-bottom: 4px;
 }
 
-.post-date {
+.post-subheading {
   font-size: var(--font-size-small);
   line-height: 1.5;
   color: var(--text-muted);
+}
+
+.post-subheading-row {
+  display: flex;
+  align-items: center;
+  /*justify-content: center;*/
+}
+
+.post-subheading a {
+  color: var(--text-muted);
+}
+
+.post-subheading a:hover,
+.post-subheading a:focus {
+  color: var(--secondary);
+}
+
+.post-subheading p {
+  margin: 0;
+}
+
+.post-subheading p + p::before {
+  content: "·";
+  margin-left: 5px;
+  margin-right: 2px;
 }
 
 .post-more {
